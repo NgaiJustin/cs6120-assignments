@@ -8,5 +8,6 @@ using the [Big Red Intermediate Language](https://capra.cs.cornell.edu/bril/intr
 
 * `bril-rs` - Simple rust library for interfacing with Bril. Most of it
 is taken from [https://github.com/sampsyo/bril](https://github.com/sampsyo/bril)
-* `test` - Test directory for [TURNT](https://github.com/cucapra/turnt) snapshot tests.
-Tests were developed on top of the [https://github.com/sampsyo/bril](https://github.com/sampsyo/bril) benchmarks.
+* `lesson` - Lesson assignments
+* `benchmark` - Test directory for [TURNT](https://github.com/cucapra/turnt) snapshot tests.
+Benchmarks are taken from [https://github.com/sampsyo/bril](https://github.com/sampsyo/bril) benchmarks.
