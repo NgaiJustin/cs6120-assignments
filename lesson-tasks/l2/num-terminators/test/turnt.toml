@@ -1,0 +1,3 @@
+command = "cat {filename} | cargo run --bin num-terminators"
+return_code = 0
+output.txt = "result.txt"
