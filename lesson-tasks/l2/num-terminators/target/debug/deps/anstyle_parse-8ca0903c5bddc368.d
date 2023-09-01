@@ -1,9 +1,0 @@
-/Users/justinngai/Documents/GitHub/cs6120-bril/lesson-tasks/l2/num-terminators/target/debug/deps/anstyle_parse-8ca0903c5bddc368.rmeta: /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/lib.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/params.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/mod.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/definitions.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/table.rs
-
-/Users/justinngai/Documents/GitHub/cs6120-bril/lesson-tasks/l2/num-terminators/target/debug/deps/anstyle_parse-8ca0903c5bddc368.d: /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/lib.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/params.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/mod.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/definitions.rs /Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/table.rs
-
-/Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/lib.rs:
-/Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/params.rs:
-/Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/mod.rs:
-/Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/definitions.rs:
-/Users/justinngai/.cargo/registry/src/index.crates.io-6f17d22bba15001f/anstyle-parse-0.2.1/src/state/table.rs:
