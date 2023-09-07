@@ -7,7 +7,7 @@ import json
 from collections import defaultdict
 from blocks import func_to_blocks
 from typing import Dict
-from bril_type import *
+from bril_type import Instruction
 
 
 def flatten(blocks: list[list[Instruction]]):
@@ -15,8 +15,12 @@ def flatten(blocks: list[list[Instruction]]):
     return [instr for block in blocks for instr in block]
 
 
-def tdce(blocks: list[list[Instruction]]):
-    """Perform dead code elimination on a list of basic blocks."""
+def tdce(blocks: list[list[Instruction]]) -> tuple[list[list[Instruction]], int]:
+    """
+    Perform dead code elimination on a list of basic blocks.
+
+    Returns a tuple of the new list of basic blocks and the number of lines eliminated.
+    """
     to_delete = defaultdict(
         set
     )  # Map of block indices to instruction indices to delete
@@ -48,7 +52,9 @@ def tdce(blocks: list[list[Instruction]]):
             instr for ii, instr in enumerate(blocks[bi]) if ii not in to_delete_instrs_i
         ]
 
-    return blocks
+    lines_eliminated = sum(len(to_delete_i) for to_delete_i in to_delete.values())
+
+    return (blocks, lines_eliminated)
 
 
 def load():
@@ -79,12 +85,22 @@ def load():
 
 if __name__ == "__main__":
     program = load()
-    if program:
+
+    if program is None:
+        sys.exit(1)
+
+    total_lines_eliminated = 0
+    while True:
+        lines_eliminated = 0
         for fi, func in enumerate(program["functions"]):
             basic_blocks = func_to_blocks(func)
-            new_instrs = tdce(basic_blocks)
+            new_instrs, lines_elim_in_block = tdce(basic_blocks)
             program["functions"][fi]["instrs"] = flatten(new_instrs)
 
+            lines_eliminated += lines_elim_in_block
             # TODO: Measure the performance of dead code elimination
+
+        if lines_eliminated == 0:
+            break
 
     json.dump(program, sys.stdout, indent=2)
