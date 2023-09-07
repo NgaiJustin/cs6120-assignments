@@ -1,18 +1,13 @@
 # Write a program that loads a json file from the command line and prints it to the console.
 
 import sys
-import argparse
 import json
 
-from collections import defaultdict
-from blocks import func_to_blocks
-from typing import Dict
 from bril_type import Instruction
-
-
-def flatten(blocks: list[list[Instruction]]):
-    """Flatten a list of basic blocks into a single list of instructions."""
-    return [instr for block in blocks for instr in block]
+from blocks import func_to_blocks
+from collections import defaultdict
+from typing import Dict
+from utils import load, flatten
 
 
 def tdce(blocks: list[list[Instruction]]) -> tuple[list[list[Instruction]], int]:
@@ -55,32 +50,6 @@ def tdce(blocks: list[list[Instruction]]) -> tuple[list[list[Instruction]], int]
     lines_eliminated = sum(len(to_delete_i) for to_delete_i in to_delete.values())
 
     return (blocks, lines_eliminated)
-
-
-def load():
-    """Load a .bril program from the command line or stdin."""
-
-    # If no file is specified, read from stdin
-    if len(sys.argv) == 1:
-        return json.load(sys.stdin)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "f",
-        help="The name of the file to load",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
-    )
-    args = parser.parse_args()
-
-    try:
-        return json.load(args.f)
-    except FileNotFoundError:
-        print("File not found")
-        return
-    except json.JSONDecodeError:
-        print("Invalid JSON")
-        return
 
 
 if __name__ == "__main__":
