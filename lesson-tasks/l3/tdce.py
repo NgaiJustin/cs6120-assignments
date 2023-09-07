@@ -10,7 +10,24 @@ from typing import Dict
 from utils import load, flatten
 
 
-def tdce(blocks: list[Block]) -> tuple[list[Block], int]:
+def get_globally_used_vars(blocks: list[Block]) -> set[str]:
+    """
+    Return a set of all variables used in the program.
+    """
+    used_vars = set()
+
+    for block in blocks:
+        for instr in block:
+            if "args" in instr:
+                used_vars.update(instr["args"])
+
+    return used_vars
+
+
+def tdce(
+    blocks: list[Block],
+    globally_used_vars: set[str],
+) -> tuple[list[Block], int]:
     """
     Perform dead code elimination on a list of basic blocks.
 
@@ -34,10 +51,11 @@ def tdce(blocks: list[Block]) -> tuple[list[Block], int]:
 
                 last_def[instr["dest"]] = ii
 
-        # If last_def is not empty, then flag all of the entries for deletion
+        # Flag all non-globally used variables as dead
         if last_def:
-            for ii in last_def.values():
-                to_delete[bi].add(ii)
+            for var, ii in last_def.items():
+                if var not in globally_used_vars:
+                    to_delete[bi].add(ii)
 
     # Batch delete dead instructions
     for bi, to_delete_instrs_i in to_delete.items():
@@ -61,7 +79,9 @@ if __name__ == "__main__":
         lines_eliminated = 0
         for fi, func in enumerate(program["functions"]):
             basic_blocks = func_to_blocks(func)
-            new_instrs, lines_elim_in_block = tdce(basic_blocks)
+            new_instrs, lines_elim_in_block = tdce(
+                basic_blocks, get_globally_used_vars(basic_blocks)
+            )
             program["functions"][fi]["instrs"] = flatten(new_instrs)
 
             lines_eliminated += lines_elim_in_block
