@@ -5,8 +5,14 @@ import argparse
 import json
 
 from collections import defaultdict
-from blocks import func_to_blocks, pprint_blocks
+from blocks import func_to_blocks
+from typing import Dict
 from bril_type import *
+
+
+def flatten(blocks: list[list[Instruction]]):
+    """Flatten a list of basic blocks into a single list of instructions."""
+    return [instr for block in blocks for instr in block]
 
 
 def tdce(blocks: list[list[Instruction]]):
@@ -16,7 +22,7 @@ def tdce(blocks: list[list[Instruction]]):
     )  # Map of block indices to instruction indices to delete
 
     for bi, block in enumerate(blocks):
-        last_def = {}  # Map of variable names to index of last def
+        last_def: Dict[str, int] = {}  # Map of variable names to index of last def
 
         for ii, instr in enumerate(block):
             # Check for uses
@@ -31,6 +37,11 @@ def tdce(blocks: list[list[Instruction]]):
 
                 last_def[instr["dest"]] = ii
 
+        # If last_def is not empty, then flag all of the entries for deletion
+        if last_def:
+            for ii in last_def.values():
+                to_delete[bi].add(ii)
+
     # Batch delete dead instructions
     for bi, to_delete_instrs_i in to_delete.items():
         blocks[bi] = [
@@ -41,10 +52,11 @@ def tdce(blocks: list[list[Instruction]]):
 
 
 def load():
-    """Load a .bril program from the command line"""
-    if len(sys.argv) < 2:
-        print("Provide the Bril program file to load")
-        return
+    """Load a .bril program from the command line or stdin."""
+
+    # If no file is specified, read from stdin
+    if len(sys.argv) == 1:
+        return json.load(sys.stdin)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -68,9 +80,11 @@ def load():
 if __name__ == "__main__":
     program = load()
     if program:
-        for func in program["functions"]:
+        for fi, func in enumerate(program["functions"]):
             basic_blocks = func_to_blocks(func)
-            pprint_blocks(basic_blocks)
+            new_instrs = tdce(basic_blocks)
+            program["functions"][fi]["instrs"] = flatten(new_instrs)
 
             # TODO: Measure the performance of dead code elimination
-            pprint_blocks(tdce(basic_blocks))
+
+    json.dump(program, sys.stdout, indent=2)
