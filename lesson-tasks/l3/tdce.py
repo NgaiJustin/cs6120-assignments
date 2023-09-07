@@ -4,21 +4,19 @@ import sys
 import json
 
 from bril_type import Instruction
-from blocks import func_to_blocks
+from blocks import Block, func_to_blocks
 from collections import defaultdict
 from typing import Dict
 from utils import load, flatten
 
 
-def tdce(blocks: list[list[Instruction]]) -> tuple[list[list[Instruction]], int]:
+def tdce(blocks: list[Block]) -> tuple[list[Block], int]:
     """
     Perform dead code elimination on a list of basic blocks.
 
     Returns a tuple of the new list of basic blocks and the number of lines eliminated.
     """
-    to_delete = defaultdict(
-        set
-    )  # Map of block indices to instruction indices to delete
+    to_delete = defaultdict(set)  # Map of block indices to instr indices to delete
 
     for bi, block in enumerate(blocks):
         last_def: Dict[str, int] = {}  # Map of variable names to index of last def
