@@ -9,7 +9,7 @@ from blocks import func_to_blocks, pprint_blocks
 from bril_type import *
 
 
-def dead_code_elimination(blocks: list[list[Instruction]]):
+def tdce(blocks: list[list[Instruction]]):
     """Perform dead code elimination on a list of basic blocks."""
     to_delete = defaultdict(
         set
@@ -73,4 +73,4 @@ if __name__ == "__main__":
             pprint_blocks(basic_blocks)
 
             # TODO: Measure the performance of dead code elimination
-            pprint_blocks(dead_code_elimination(basic_blocks))
+            pprint_blocks(tdce(basic_blocks))
