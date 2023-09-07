@@ -6,26 +6,37 @@ import json
 
 
 def load():
+    """Load a .bril program from the command line"""
     if len(sys.argv) < 2:
         print("Provide the Bril program file to load")
         return
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("f", help="The name of the file to load")
+    parser.add_argument(
+        "f",
+        help="The name of the file to load",
+        type=argparse.FileType("r"),
+        default=sys.stdin,
+    )
     args = parser.parse_args()
 
     try:
-        with open(args.f) as file:
-            return json.load(file)
-    except (FileNotFoundError, json.decoder.JSONDecodeError):
-        return None
+        return json.load(args.f)
+    except FileNotFoundError:
+        print("File not found")
+        return
+    except json.JSONDecodeError:
+        print("Invalid JSON")
+        return
 
 
 def dead_code_elimination(program):
-    pass
+    for func in program.get("functions", []):
+        for instr in func.get("instrs", []):
+            print(instr)
 
 
 if __name__ == "__main__":
     program = load()
-    # dead_code_elimination(program)
-    print(program)
+    if program:
+        dead_code_elimination(program)
