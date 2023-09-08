@@ -35,7 +35,10 @@ def lvn(block: Block):
         value = [instr["op"]]
         if "args" in instr:
             for arg in instr.get("args", []):
-                value.append(var2num[arg])
+                try:
+                    value.append(var2num[arg])
+                except:
+                    value.append(arg)
 
         return tuple(value)
 
@@ -57,11 +60,15 @@ def lvn(block: Block):
         if "op" not in instr:
             continue  # Skip labels
 
-        arg_ids = tuple(var2num[var] for var in instr.get("args", []))
-        if "args" in instr:
-            instr["args"] = [num2vars[n] for n in arg_ids]
+        try:
+            arg_ids = tuple(var2num[var] for var in instr.get("args", []))
+            if "args" in instr:
+                instr["args"] = [num2vars[n] for n in arg_ids]
+        except KeyError:
+            pass
 
         value = instr_to_tuple(instr)
+        # print(value)
 
         if value in table:
             # The value has been computed before; reuse it.
@@ -87,7 +94,10 @@ def lvn(block: Block):
                 var2num[dest] = curr_num
 
                 for ai, arg in enumerate(instr.get("args", [])):
-                    instr["args"][ai] = table[num2val[var2num[arg]]]
+                    try:
+                        instr["args"][ai] = table[num2val[var2num[arg]]]
+                    except KeyError:
+                        pass
 
     # Replace all flagged copy propagations
     for ii in range(len(block)):
