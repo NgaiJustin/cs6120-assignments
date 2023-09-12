@@ -45,20 +45,20 @@ def pprint_blocks(blocks: List[Block]):
         print()
 
 
-test_input = {
-    "functions": [
-        {
-            "instrs": [
-                {"dest": "v1", "op": "const", "type": "int", "value": 1},
-                {"dest": "v1", "op": "const", "type": "int", "value": 2},
-                {"args": ["v1"], "op": "print"},
-            ],
-            "name": "main",
-        }
-    ]
-}
+# test_input = {
+#     "functions": [
+#         {
+#             "instrs": [
+#                 {"dest": "v1", "op": "const", "type": "int", "value": 1},
+#                 {"dest": "v1", "op": "const", "type": "int", "value": 2},
+#                 {"args": ["v1"], "op": "print"},
+#             ],
+#             "name": "main",
+#         }
+#     ]
+# }
 
 
-if __name__ == "__main__":
-    blocks = func_to_blocks(test_input["functions"][0])
-    pprint_blocks(blocks)
+# if __name__ == "__main__":
+#     blocks = func_to_blocks(test_input["functions"][0])
+#     pprint_blocks(blocks)
