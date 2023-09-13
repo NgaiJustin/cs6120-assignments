@@ -1,13 +1,18 @@
 import json
 import sys
+from typing import List
 
 from bril_type import *
-from utils import load
 from cfg import cfg_visualize, to_cfg_fine_grain
+from dfa_framework import DataFlowAnalysis
+from node import Node
+from utils import load
 
 
-def reaching_definition(program):
+def reaching_definition(cfg_root_nodes: List[Node]) -> DataFlowAnalysis:
     """Compute and reaching definitions for each instruction in the program."""
+
+    return DataFlowAnalysis(cfg_root_nodes)
 
 
 if __name__ == "__main__":
@@ -17,9 +22,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     cfgs = to_cfg_fine_grain(program)
-
-    for root_nodes in cfgs:
-        print(root_nodes)
     cfg_visualize(cfgs)
 
     # json.dump(program, sys.stdout, indent=2)

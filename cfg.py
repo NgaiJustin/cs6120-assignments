@@ -32,6 +32,8 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
 
         # Add edges between nodes
         for i in range(len(nodes) - 1):
+            if nodes[i].instr.get("op") in {"jmp", "br"}:
+                continue
             nodes[i].successors.add(nodes[i + 1])
             nodes[i + 1].predecessors.add(nodes[i])
 
@@ -80,7 +82,7 @@ def cfg_visualize(cfg_root_nodes: List[Node]):
             node.id,
             briltxt.instr_to_string(node.instr)
             if "op" in node.instr
-            else str(node.instr),
+            else f"LABEL <{node.instr.get('label')}>",  # must be label
         )
 
         for next_node in node.successors:
@@ -88,7 +90,7 @@ def cfg_visualize(cfg_root_nodes: List[Node]):
                 next_node.id,
                 briltxt.instr_to_string(next_node.instr)
                 if "op" in next_node.instr
-                else str(next_node.instr),
+                else f"LABEL <{node.instr.get('label')}>",  # must be label
             )
             g.edge(node.id, next_node.id)
 

@@ -1,3 +1,6 @@
+from node import Node
+
+
 class DataFlowAnalysis:
     def __init__(self, cfg):
         self.cfg = cfg
@@ -34,8 +37,8 @@ class DataFlowAnalysis:
                     self.in_sets[node] = new_in_set
                     self.out_sets[node] = new_out_set
 
-    def get_in_set(self, node):
+    def get_in_set(self, node: Node):
         return self.in_sets[node]
 
-    def get_out_set(self, node):
+    def get_out_set(self, node: Node):
         return self.out_sets[node]
