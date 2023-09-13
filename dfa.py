@@ -1,5 +1,6 @@
 import sys
-from typing import Iterable, List, Dict, Set
+from collections import defaultdict
+from typing import Dict, Iterable, List, Set
 
 from bril_type import *
 from cfg import cfg_visualize, to_cfg_fine_grain
@@ -12,13 +13,17 @@ def reaching_definition(cfg_root_nodes: List[Node]) -> None:
     """Compute and reaching definitions for each instruction in the program."""
 
     def transfer_function(node: Node, in_set: Set) -> Set:
-        return set()
+        """New defintions in node, plus definitions that reach the node, minus definitions that are killed in the node."""
+        return in_set | set(node.instr.get("dest", []))
 
     def merge_function(sets: Iterable[Set]) -> Set:
-        return set()
+        merge_set = set()
+        for s in sets:
+            merge_set |= s
+        return merge_set
 
-    init_in_set: Dict[str, Set] = {node.id: set() for node in cfg_root_nodes}
-    init_out_set: Dict[str, Set] = {node.id: set() for node in cfg_root_nodes}
+    init_in_set: Dict[str, Set] = defaultdict(set)
+    init_out_set: Dict[str, Set] = defaultdict(set)
 
     for root_node in cfg_root_nodes:
         dfa = DataFlowAnalysis(
