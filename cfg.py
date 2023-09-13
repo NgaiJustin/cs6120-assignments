@@ -60,6 +60,7 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
 
 
 def cfg_visualize(cfg_root_node: Node):
+    print("Visualizing CFG")
     g = graphviz.Digraph()
     seen = set()
     q = deque([cfg_root_node])

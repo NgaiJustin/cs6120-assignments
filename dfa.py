@@ -1,9 +1,9 @@
-import sys
 import json
+import sys
 
 from ...utils.bril_type import *
-from ..cfg import to_cfg_fine_grain, cfg_visualize
 from ...utils.utils import load
+from ..cfg import cfg_visualize, to_cfg_fine_grain
 
 
 def reaching_definition(program):
@@ -11,7 +11,6 @@ def reaching_definition(program):
 
 
 if __name__ == "__main__":
-    print("smd")
     program: Program = load()
 
     if program is None:
