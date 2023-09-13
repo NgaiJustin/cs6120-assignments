@@ -3,7 +3,7 @@ import sys
 from collections import deque
 from typing import Collection, Dict, List, Set
 
-import graphviz
+import graphviz  # type: ignore
 
 from bril_type import *
 from node import Node
@@ -67,7 +67,7 @@ def cfg_visualize(cfg_root_nodes: List[Node]):
     """Visualize a control flow graph using graphviz.
 
     Paste output in https://edotor.net/ for a pretty diagram"""
-    import briltxt
+    import briltxt  # type: ignore
 
     print("Visualizing CFG")
     g = graphviz.Digraph()
