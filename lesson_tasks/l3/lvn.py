@@ -20,24 +20,24 @@ def lvn(block: Block):
     table: Dict[tuple, str] = {}  # Maps value tuples to canonical vars
 
     # Maps instruction indices to var names (to take ID from)
-    to_replace: Dict[int, str] = defaultdict(dict)
+    to_replace: Dict[int, str] = defaultdict(dict)  # type: ignore
 
     def instr_to_tuple(instr: Instruction) -> tuple:
         # TODO: Add canonicalization of the tuple (e.g., sort args)
         # (add, 1, 2) == (add, 2, 1)
         if "op" not in instr:
-            return None
+            return ()
 
         if instr["op"] == "const":
-            return ("const", instr["value"])
+            return ("const", instr.get("value"))
         elif instr["op"] == "id":
-            return ("id", instr["args"][0])
+            return ("id", instr.get("args", [""])[0])
 
         value = [instr["op"]]
         if "args" in instr:
             for arg in instr.get("args", []):
                 try:
-                    value.append(var2num[arg])
+                    value.append(var2num[arg])  # type: ignore
                 except:
                     value.append(arg)
 
@@ -75,7 +75,7 @@ def lvn(block: Block):
             # The value has been computed before; reuse it.
             var = table[value]
             to_replace[ii] = var
-            var2num[instr["dest"]] = var2num[var]
+            var2num[instr.get("dest", "")] = var2num[var]
         else:
             # A newly computed value.
             if "dest" in instr:
@@ -103,8 +103,8 @@ def lvn(block: Block):
     # Replace all flagged copy propagations
     for ii in range(len(block)):
         if ii in to_replace and "dest" in block[ii]:
-            block[ii] = {
-                "dest": block[ii]["dest"],
+            block[ii] = {  # type: ignore
+                "dest": block[ii].get("dest"),
                 "op": "id",
                 "args": [to_replace[ii]],
             }
