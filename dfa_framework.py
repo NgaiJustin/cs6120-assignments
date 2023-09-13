@@ -1,9 +1,8 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Set, TypeVar, Generic
+from typing import Callable, Dict, Generic, Iterable, Set, TypeVar
 
 from node import Node
-
 
 T = TypeVar("T")
 
@@ -11,16 +10,26 @@ T = TypeVar("T")
 @dataclass(frozen=True)
 class DataFlowAnalysis(Generic[T]):
     entry_node: Node
-    in_sets: Dict[str, Iterable[T]]
-    out_sets: Dict[str, Iterable[T]]
-    transfer_function: Callable[[Node, Iterable[T]], Iterable[T]]
-    merge_function: Callable[[Iterable[Iterable[T]]], Iterable[T]]
+    in_sets: Dict[str, T]
+    out_sets: Dict[str, T]
+    transfer_function: Callable[[Node, T], T]
+    merge_function: Callable[[Iterable[T]], T]
 
     def run(self: "DataFlowAnalysis") -> None:
-        # Implement worklist algorithm with an initial DFS pass
-        worklist: deque[Node] = deque([self.entry_node])
-        iters = 0
+        # Init worklist with all nodes in CFG
+        seen: Set[str] = set()
+        q: deque[Node] = deque([self.entry_node])
+        worklist: deque[Node] = deque()
+        while q:
+            node = q.popleft()
+            worklist.append(node)
+            for succ in node.successors:
+                if succ.id not in seen:
+                    seen.add(succ.id)
+                    q.append(succ)
+                    worklist.append(succ)
 
+        iters = 0
         while worklist:
             node = worklist.popleft()
 
