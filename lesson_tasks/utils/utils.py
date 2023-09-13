@@ -4,10 +4,10 @@ import sys
 import json
 import argparse
 
-from bril_type import Instruction
+from .bril_type import *
 
 
-def load():
+def load() -> Program:
     """Load a .bril program from the command line or stdin."""
 
     # If no file is specified, read from stdin
@@ -27,10 +27,10 @@ def load():
         return json.load(args.f)
     except FileNotFoundError:
         print("File not found")
-        return
+        return Program(functions=[])
     except json.JSONDecodeError:
         print("Invalid JSON")
-        return
+        return Program(functions=[])
 
 
 def flatten(blocks: list[list[Instruction]]):

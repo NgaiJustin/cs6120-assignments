@@ -17,7 +17,8 @@ class Instruction(TypedDict, total=False):
     type: Type
     args: list[str]
     funcs: list[str]
-    labels: list[str]
+    label: str  # for labels
+    labels: list[str]  # for jmp and br
     value: Literal
 
 

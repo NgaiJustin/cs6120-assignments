@@ -1,4 +1,4 @@
-from bril_type import *
+from ..utils.bril_type import *
 from dataclasses import dataclass
 from typing import List, Optional
 
