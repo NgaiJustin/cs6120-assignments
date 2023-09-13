@@ -1,6 +1,6 @@
 import json
 from collections import deque
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import graphviz
 
@@ -16,8 +16,9 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
         labels: Dict[str, Node] = {}
 
         # Split each instruction into its own basic block
-        for instr in func.get("instrs", []):
+        for i, instr in enumerate(func.get("instrs", [])):
             node = Node(
+                id=i,
                 predecessors=[],
                 successors=[],
                 instr=instr,
@@ -62,25 +63,21 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
 def cfg_visualize(cfg_root_node: Node):
     print("Visualizing CFG")
     g = graphviz.Digraph()
-    seen = set()
+    seen: Set[int] = set()
     q = deque([cfg_root_node])
 
     while len(q) > 0:
         node = q.popleft()
 
-        g.dot(
-            str(node.instr),
-            str(node.instr),
-        )
+        g.node(str(node.id), str(node.instr))
+
         for next_node in node.successors:
-            g.dot(
-                str(next_node.instr),
-                str(next_node.instr),
-            )
-            g.edge(str(node), str(next_node.instr))
+            g.node(str(next_node.id), str(next_node.instr))
+            g.edge(str(node.id), str(next_node.id))
 
-            if next_node not in seen:
+            if node.id not in seen:
                 q.append(next_node)
-                seen.add(next_node)
+                seen.add(node.id)
 
-    g.view()
+    print(g.source)
+    return g.source

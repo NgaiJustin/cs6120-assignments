@@ -17,6 +17,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     cfgs = to_cfg_fine_grain(program)
+
     cfg_visualize(cfgs[0])
 
-    json.dump(program, sys.stdout, indent=2)
+    # json.dump(program, sys.stdout, indent=2)
