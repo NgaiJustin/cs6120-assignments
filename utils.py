@@ -4,7 +4,7 @@ import sys
 import json
 import argparse
 
-from .bril_type import *
+from bril_type import *
 
 
 def load() -> Program:

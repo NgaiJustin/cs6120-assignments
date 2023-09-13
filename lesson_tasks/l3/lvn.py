@@ -1,12 +1,13 @@
-import sys
 import json
+import sys
+from collections import defaultdict
+from typing import Dict, List
+
+from .blocks import Block, func_to_blocks
+from .tdce import get_globally_used_vars, tdce
 
 from bril_type import Instruction
-from blocks import Block, func_to_blocks
-from collections import defaultdict
-from tdce import tdce, get_globally_used_vars
-from typing import Dict, List
-from utils import load, flatten
+from utils import flatten, load
 
 
 def lvn(block: Block):

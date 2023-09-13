@@ -1,13 +1,13 @@
 # Write a program that loads a json file from the command line and prints it to the console.
 
-import sys
 import json
-
-from bril_type import Instruction
-from blocks import Block, func_to_blocks
+import sys
 from collections import defaultdict
 from typing import Dict
-from utils import load, flatten
+
+from .blocks import Block, func_to_blocks
+
+from utils import flatten, load
 
 
 def get_globally_used_vars(blocks: list[Block]) -> set[str]:

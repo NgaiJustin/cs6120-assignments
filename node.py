@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional
 
-from ..utils.bril_type import *
+from bril_type import *
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,9 @@
 import json
 import sys
 
-from ...utils.bril_type import *
-from ...utils.utils import load
-from ..cfg import cfg_visualize, to_cfg_fine_grain
+from bril_type import *
+from utils import load
+from cfg import cfg_visualize, to_cfg_fine_grain
 
 
 def reaching_definition(program):

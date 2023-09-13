@@ -4,8 +4,8 @@ from typing import Dict, List
 
 import graphviz
 
-from ..utils.bril_type import *
-from .node import Node
+from bril_type import *
+from node import Node
 
 
 def to_cfg_fine_grain(bril: Program) -> List[Node]:
