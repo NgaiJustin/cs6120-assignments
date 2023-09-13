@@ -18,6 +18,8 @@ if __name__ == "__main__":
 
     cfgs = to_cfg_fine_grain(program)
 
-    cfg_visualize(cfgs[0])
+    for root_nodes in cfgs:
+        print(root_nodes)
+    cfg_visualize(cfgs)
 
     # json.dump(program, sys.stdout, indent=2)
