@@ -1,7 +1,5 @@
-import json
-import sys
 from collections import deque
-from typing import Collection, Dict, List, Set
+from typing import Dict, List, Set
 
 import graphviz  # type: ignore
 

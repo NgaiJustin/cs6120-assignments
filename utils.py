@@ -1,8 +1,8 @@
 """Utility functions for working with Bril programs used by both tdce.py and lvn.py."""
 
-import sys
-import json
 import argparse
+import json
+import sys
 
 from bril_type import *
 
