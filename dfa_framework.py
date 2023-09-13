@@ -1,17 +1,17 @@
-from node import Node
 from collections import deque
 from dataclasses import dataclass
+from typing import Callable, Dict, Iterable, List, Set
 
-from typing import Callable, Dict, Iterable, List
+from node import Node
 
 
 @dataclass(frozen=True)
 class DataFlowAnalysis:
     entry_node: Node
-    in_sets: Dict[str, set]
-    out_sets: Dict[str, set]
-    transfer_function: Callable[[Node, set], set]
-    merge_function: Callable[[Iterable[set]], set]
+    in_sets: Dict[str, Set]
+    out_sets: Dict[str, Set]
+    transfer_function: Callable[[Node, Set], Set]
+    merge_function: Callable[[Iterable[Set]], Set]
 
     def run(self: "DataFlowAnalysis") -> None:
         # Implement worklist algorithm with an initial DFS pass
