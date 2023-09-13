@@ -62,6 +62,9 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
 
 
 def cfg_visualize(cfg_root_nodes: List[Node]):
+    """Visualize a control flow graph using graphviz.
+
+    Paste output in https://edotor.net/ for a pretty diagram"""
     import briltxt
 
     print("Visualizing CFG")
