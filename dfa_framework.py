@@ -1,17 +1,20 @@
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Set
+from typing import Callable, Dict, Iterable, List, Set, TypeVar, Generic
 
 from node import Node
 
 
+T = TypeVar("T")
+
+
 @dataclass(frozen=True)
-class DataFlowAnalysis:
+class DataFlowAnalysis(Generic[T]):
     entry_node: Node
-    in_sets: Dict[str, Set]
-    out_sets: Dict[str, Set]
-    transfer_function: Callable[[Node, Set], Set]
-    merge_function: Callable[[Iterable[Set]], Set]
+    in_sets: Dict[str, Iterable[T]]
+    out_sets: Dict[str, Iterable[T]]
+    transfer_function: Callable[[Node, Iterable[T]], Iterable[T]]
+    merge_function: Callable[[Iterable[Iterable[T]]], Iterable[T]]
 
     def run(self: "DataFlowAnalysis") -> None:
         # Implement worklist algorithm with an initial DFS pass

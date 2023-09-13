@@ -9,22 +9,26 @@ from node import Node
 from utils import load
 
 
-def reaching_definition(cfg_root_nodes: List[Node]) -> None:
-    """Compute and reaching definitions for each instruction in the program."""
+def reaching_definition(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
+    """Returns a data flow analysis for reaching defintions for each function in the program.
 
-    def transfer_function(node: Node, in_set: Set) -> Set:
+    Sets contain the names of variables that are defined
+    """
+
+    def transfer_function(node: Node, in_set: Iterable[str]) -> Set:
         """New defintions in node, plus definitions that reach the node, minus definitions that are killed in the node."""
-        return in_set | set(node.instr.get("dest", []))
+        return set(in_set) | set(node.instr.get("dest", []))
 
-    def merge_function(sets: Iterable[Set]) -> Set:
-        merge_set = set()
+    def merge_function(sets: Iterable[Iterable[str]]) -> Iterable:
+        merge_set: Set[str] = set()
         for s in sets:
-            merge_set |= s
+            merge_set |= set(s)
         return merge_set
 
-    init_in_set: Dict[str, Set] = defaultdict(set)
-    init_out_set: Dict[str, Set] = defaultdict(set)
+    init_in_set: Dict[str, Iterable] = defaultdict(set)
+    init_out_set: Dict[str, Iterable] = defaultdict(set)
 
+    dfas = []
     for root_node in cfg_root_nodes:
         dfa = DataFlowAnalysis(
             entry_node=root_node,
@@ -34,6 +38,18 @@ def reaching_definition(cfg_root_nodes: List[Node]) -> None:
             merge_function=merge_function,
         )
         dfa.run()
+        dfas.append(dfa)
+
+    return dfas
+
+
+def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
+    """Returns a data flow analysis for constant propagation for each function in the program.
+
+    Sets
+    """
+
+    return []
 
 
 def get_root_nodes(cfg_nodes: List[Node]) -> List[Node]:
