@@ -1,8 +1,15 @@
 from node import Node
+from collections import deque
 
 
 class DataFlowAnalysis:
-    def __init__(self, cfg):
+    def __init__(
+        self,
+        cfg,
+        init_sets=None,
+        transfer_function=None,
+        merge_function=None,
+    ):
         self.cfg = cfg
         self.in_sets = {}
         self.out_sets = {}
@@ -18,6 +25,8 @@ class DataFlowAnalysis:
             self.merge_function[node] = lambda in_sets: set.union(*in_sets)
 
     def run(self):
+        # Implement worklist algorithm with an initial DFS pass
+        worklist = deque()
         changed = True
         while changed:
             changed = False

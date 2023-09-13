@@ -8,10 +8,12 @@ from node import Node
 from utils import load
 
 
-def reaching_definition(cfg_root_nodes: List[Node]) -> DataFlowAnalysis:
+def reaching_definition(cfg_nodes: List[Node]) -> DataFlowAnalysis:
     """Compute and reaching definitions for each instruction in the program."""
 
-    return DataFlowAnalysis(cfg_root_nodes)
+    dfa = DataFlowAnalysis(cfg_nodes)
+
+    return dfa
 
 
 if __name__ == "__main__":
