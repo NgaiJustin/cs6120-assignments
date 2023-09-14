@@ -60,11 +60,7 @@ class DataFlowAnalysis(Generic[T]):
             )
             new_out_set: T = self.transfer_function(node, in_set)
 
-            print(f"DEBUG: {node.id} {node.instr}")
-
             if new_in_set != in_set or new_out_set != out_set:
-                print("DEBUG", new_in_set, in_set)
-                print("DEBUG", new_out_set, out_set)
                 self.in_sets[node.id] = new_in_set
                 self.out_sets[node.id] = new_out_set
                 worklist.extend(node.successors)

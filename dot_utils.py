@@ -23,6 +23,9 @@ class DotFilmStrip:
     def add_frame(self, dot: str) -> None:
         self.dot_frames.append(dot)
 
+    def extend_frames(self, dots: List[str]) -> None:
+        self.dot_frames.extend(dots)
+
     def clear_frames(self) -> None:
         self.dot_frames.clear()
 
@@ -34,8 +37,13 @@ class DotFilmStrip:
         if not dir.exists():
             # create the directory
             dir.mkdir(parents=True)
+            raise Exception(
+                "Working directory does not exist, directory created. Please re-run the program."
+            )
+
         if not dir.is_dir():
             raise Exception("Working directory is not a directory")
+
         if len(list(dir.iterdir())) != 0:
             # Ask user if they want to overwrite the directory
             print(f"Working directory is not empty: {working_dir}")

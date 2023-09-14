@@ -245,13 +245,12 @@ if __name__ == "__main__":
     ####################################################################################
     ## Run constant prop DFA on Catalan example and generate DFA animation
     name = "catalan-constant-prop"
-    cp_dfas = constant_propagation(get_root_nodes(cfgs), visualize_mode=False)
-    print([cp_dfa.visualize() for cp_dfa in cp_dfas][1])
+    cp_dfas = constant_propagation(get_root_nodes(cfgs), visualize_mode=True)
 
-    # cp_ex = cp_dfas[1]
-    # dfs = DotFilmStrip(name)
-    # dfs.dot_frames = cp_ex.dot_graphs
-    # dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
+    cp_ex = cp_dfas[1]
+    dfs = DotFilmStrip(name)
+    dfs.extend_frames(cp_ex.dot_graphs)
+    dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
     ####################################################################################
 
     # json.dump(program, sys.stdout, indent=2)
