@@ -1,6 +1,0 @@
-digraph {
-	node [shape=none width="1in"]
-	"f0-0" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>catn: int = call @catalan input</td></tr><tr><td><b>{'catn'}</b></td></tr></table>>]
-	"f0-1" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'catn'}</b></td></tr><tr><td>print catn</td></tr><tr><td><b>set()</b></td></tr></table>>]
-	"f0-0" -> "f0-1"
-}

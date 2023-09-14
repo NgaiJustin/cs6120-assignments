@@ -1,8 +1,0 @@
-digraph {
-	node [shape=none width="1in"]
-	"f0-0" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>print n</td></tr><tr><td><b>~</b></td></tr></table>>]
-	"f0-1" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>tot: int = call @totient n</td></tr><tr><td><b>{'tot'}</b></td></tr></table>>]
-	"f0-2" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tot'}</b></td></tr><tr><td>print tot</td></tr><tr><td><b>set()</b></td></tr></table>>]
-	"f0-1" -> "f0-2"
-	"f0-0" -> "f0-1"
-}

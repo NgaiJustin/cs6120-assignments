@@ -10,7 +10,10 @@ from moviepy.editor import ImageClip, concatenate_videoclips  # type: ignore
 
 # custom key for ordering dot_file names representing frames
 def dot_file_key(dot_file: str) -> int:
-    return int(dot_file.split("-")[-1].split(".")[0])
+    try:
+        return int(dot_file.split("-")[-1].split(".")[0])
+    except:
+        return 0
 
 
 class DotFilmStrip:
@@ -49,20 +52,23 @@ class DotFilmStrip:
             print(f"Working directory is not empty: {working_dir}")
             for file in sorted(os.listdir(working_dir), key=dot_file_key):
                 print(f"  - {file}")
-            print("Do you want to overwrite the directory? [y/n]")
+
+            print("Do you want to use the existing files to create the gif? [y/n]")
             overwrite = input()
             if overwrite.lower() == "y":
-                # delete all files in the directory
-                for file in sorted(os.listdir(working_dir), key=dot_file_key):
-                    os.remove(os.path.join(working_dir, file))
-            else:
-                # use png files in the directory to create the gif
                 print("Using existing files to create gif")
                 image_paths = [
                     os.path.join(working_dir, img)
                     for img in sorted(os.listdir(working_dir), key=dot_file_key)
                     if img.endswith(".png")
                 ]
+            else:
+                print("Do you want to overwrite the directory? [y/n]")
+                overwrite = input()
+                if overwrite.lower() == "y":
+                    # delete all files in the directory
+                    for file in sorted(os.listdir(working_dir), key=dot_file_key):
+                        os.remove(os.path.join(working_dir, file))
 
         if len(image_paths) == 0:
             # render dot files to png files
