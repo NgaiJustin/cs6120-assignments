@@ -1,0 +1,44 @@
+digraph {
+	node [shape=none width="1in"]
+	"f0-0" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>zero: int = const 0</td></tr><tr><td><b>{'zero'}</b></td></tr></table>>]
+	"f0-1" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'zero'}</b></td></tr><tr><td>one: int = const 1</td></tr><tr><td><b>{'one', 'zero'}</b></td></tr></table>>]
+	"f0-2" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'one', 'zero'}</b></td></tr><tr><td>cond_m: bool = eq m zero</td></tr><tr><td><b>{'one', 'zero', 'cond_m'}</b></td></tr></table>>]
+	"f0-3" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'one', 'zero', 'cond_m'}</b></td></tr><tr><td>br cond_m .m_zero .m_nonzero</td></tr><tr><td><b>{'one', 'cond_m'}</b></td></tr></table>>]
+	"f0-4" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'one', 'cond_m'}</b></td></tr><tr><td>LABEL m_zero</td></tr><tr><td><b>{'cond_m'}</b></td></tr></table>>]
+	"f0-7" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'one', 'tmp', 'cond_m'}</b></td></tr><tr><td>LABEL m_nonzero</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f0-5" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'cond_m'}</b></td></tr><tr><td>tmp: int = add n one</td></tr><tr><td><b>{'tmp'}</b></td></tr></table>>]
+	"f0-8" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'one', 'tmp', 'cond_m'}</b></td></tr><tr><td>cond_n: bool = eq n zero</td></tr><tr><td><b>{'tmp', 'cond_n', 'cond_m'}</b></td></tr></table>>]
+	"f0-6" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tmp'}</b></td></tr><tr><td>ret tmp</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f0-9" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'cond_n'}</b></td></tr><tr><td>br cond_n .n_zero .n_nonzero</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f0-10" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'cond_n'}</b></td></tr><tr><td>LABEL n_zero</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f0-14" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tmp', 'cond_n', 'm1'}</b></td></tr><tr><td>LABEL n_nonzero</td></tr><tr><td><b>{'tmp', 'cond_n'}</b></td></tr></table>>]
+	"f0-11" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'cond_n'}</b></td></tr><tr><td>m1: int = sub m one</td></tr><tr><td><b>{'m1'}</b></td></tr></table>>]
+	"f0-15" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tmp', 'cond_n'}</b></td></tr><tr><td>m1: int = sub m one</td></tr><tr><td><b>{'tmp', 'cond_n', 'm1'}</b></td></tr></table>>]
+	"f0-12" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'m1'}</b></td></tr><tr><td>tmp: int = call @ack m1 one</td></tr><tr><td><b>{'tmp', 'm1'}</b></td></tr></table>>]
+	"f0-16" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'m1'}</b></td></tr><tr><td>n1: int = sub n one</td></tr><tr><td><b>{'n1', 'm1'}</b></td></tr></table>>]
+	"f0-13" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tmp', 'm1'}</b></td></tr><tr><td>ret tmp</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f0-17" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'n1', 'm1'}</b></td></tr><tr><td>t1: int = call @ack m n1</td></tr><tr><td><b>{'n1', 'm1', 't1'}</b></td></tr></table>>]
+	"f0-18" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'n1', 'm1', 't1'}</b></td></tr><tr><td>t2: int = call @ack m1 t1</td></tr><tr><td><b>{'n1', 't2', 't1'}</b></td></tr></table>>]
+	"f0-19" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'n1', 't2', 't1'}</b></td></tr><tr><td>ret t2</td></tr><tr><td><b>{'t2', 't1'}</b></td></tr></table>>]
+	"f0-18" -> "f0-19"
+	"f0-17" -> "f0-18"
+	"f0-13" -> "f0-14"
+	"f0-16" -> "f0-17"
+	"f0-12" -> "f0-13"
+	"f0-15" -> "f0-16"
+	"f0-11" -> "f0-12"
+	"f0-14" -> "f0-15"
+	"f0-10" -> "f0-11"
+	"f0-9" -> "f0-10"
+	"f0-9" -> "f0-14"
+	"f0-6" -> "f0-7"
+	"f0-8" -> "f0-9"
+	"f0-5" -> "f0-6"
+	"f0-7" -> "f0-8"
+	"f0-4" -> "f0-5"
+	"f0-3" -> "f0-4"
+	"f0-3" -> "f0-7"
+	"f0-2" -> "f0-3"
+	"f0-1" -> "f0-2"
+	"f0-0" -> "f0-1"
+}

@@ -100,5 +100,5 @@ def cfg_visualize(cfg_nodes: List[Node]):
                     q.append(next_node)
                     visit_state[next_node.id] = -1
 
-    print(g.source)
+    # print(g.source)
     return g.source

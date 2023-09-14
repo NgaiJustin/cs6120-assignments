@@ -1,0 +1,6 @@
+digraph {
+	node [shape=none width="1in"]
+	"f1-0" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>tmp: int = call @ack m n</td></tr><tr><td><b>{'tmp'}</b></td></tr></table>>]
+	"f1-1" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'tmp'}</b></td></tr><tr><td>print tmp</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-0" -> "f1-1"
+}

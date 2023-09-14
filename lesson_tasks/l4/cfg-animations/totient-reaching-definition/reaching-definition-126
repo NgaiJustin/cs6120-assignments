@@ -1,0 +1,76 @@
+digraph {
+	node [shape=none width="1in"]
+	"f1-0" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>set()</b></td></tr><tr><td>result: int = id n</td></tr><tr><td><b>{'result'}</b></td></tr></table>>]
+	"f1-1" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result'}</b></td></tr><tr><td>p: int = const 2</td></tr><tr><td><b>{'result', 'p'}</b></td></tr></table>>]
+	"f1-2" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'p'}</b></td></tr><tr><td>one: int = const 1</td></tr><tr><td><b>{'result', 'p', 'one'}</b></td></tr></table>>]
+	"f1-3" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'p', 'one'}</b></td></tr><tr><td>zero: int = const 0</td></tr><tr><td><b>{'result', 'p', 'zero', 'one'}</b></td></tr></table>>]
+	"f1-4" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'p', 'zero', 'one'}</b></td></tr><tr><td>LABEL for.set.cond</td></tr><tr><td><b>{'p', 'zero', 'one'}</b></td></tr></table>>]
+	"f1-5" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'p', 'zero', 'one'}</b></td></tr><tr><td>pp: int = mul p p</td></tr><tr><td><b>{'p', 'zero', 'pp', 'one'}</b></td></tr></table>>]
+	"f1-6" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'p', 'zero', 'pp', 'one'}</b></td></tr><tr><td>cond: bool = le pp n</td></tr><tr><td><b>{'one', 'p', 'pp', 'cond', 'zero'}</b></td></tr></table>>]
+	"f1-7" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'zero', 'pp', 'cond'}</b></td></tr><tr><td>br cond .for.set.body .for.set.end</td></tr><tr><td><b>{'pp', 'cond'}</b></td></tr></table>>]
+	"f1-8" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'pp', 'cond'}</b></td></tr><tr><td>LABEL for.set.body</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-27" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'pp', 'cond'}</b></td></tr><tr><td>LABEL for.set.end</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-9" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'pp', 'cond'}</b></td></tr><tr><td>npmod: int = call @mod n p</td></tr><tr><td><b>{'cond', 'npmod'}</b></td></tr></table>>]
+	"f1-28" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'pp', 'cond'}</b></td></tr><tr><td>final_if_cond: bool = gt n one</td></tr><tr><td><b>{'final_if_cond', 'cond'}</b></td></tr></table>>]
+	"f1-10" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'cond', 'npmod'}</b></td></tr><tr><td>if_cond: bool = eq npmod zero</td></tr><tr><td><b>{'if_cond', 'npmod'}</b></td></tr></table>>]
+	"f1-29" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'final_if_cond', 'cond'}</b></td></tr><tr><td>br final_if_cond .final_if_label .final_else_label</td></tr><tr><td><b>{'final_if_cond'}</b></td></tr></table>>]
+	"f1-11" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'if_cond', 'npmod'}</b></td></tr><tr><td>br if_cond .if_lbl .else_lbl</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-30" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'final_if_cond'}</b></td></tr><tr><td>LABEL final_if_label</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-33" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'final_if_cond', 'resdiv'}</b></td></tr><tr><td>LABEL final_else_label</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-12" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'if_cond', 'npmod'}</b></td></tr><tr><td>LABEL if_lbl</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-24" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'if_cond', 'npmod', 'resdiv'}</b></td></tr><tr><td>LABEL else_lbl</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-31" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'final_if_cond'}</b></td></tr><tr><td>resdiv: int = div result n</td></tr><tr><td><b>{'final_if_cond', 'resdiv'}</b></td></tr></table>>]
+	"f1-34" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'final_if_cond', 'resdiv'}</b></td></tr><tr><td>ret result</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-13" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npdiv', 'if_cond', 'npmod', 'n'}</b></td></tr><tr><td>LABEL while.set.cond</td></tr><tr><td><b>{'npdiv', 'if_cond', 'n'}</b></td></tr></table>>]
+	"f1-25" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'if_cond', 'npmod', 'resdiv'}</b></td></tr><tr><td>p: int = add p one</td></tr><tr><td><b>{'result', 'if_cond', 'p', 'npmod', 'resdiv'}</b></td></tr></table>>]
+	"f1-32" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'final_if_cond', 'resdiv'}</b></td></tr><tr><td>result: int = sub result resdiv</td></tr><tr><td><b>{'result', 'resdiv'}</b></td></tr></table>>]
+	"f1-14" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npdiv', 'if_cond', 'n'}</b></td></tr><tr><td>npmod: int = call @mod n p</td></tr><tr><td><b>{'if_cond', 'npmod', 'n'}</b></td></tr></table>>]
+	"f1-26" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'result', 'if_cond', 'p', 'npmod', 'resdiv'}</b></td></tr><tr><td>jmp .for.set.cond</td></tr><tr><td><b>{'p'}</b></td></tr></table>>]
+	"f1-15" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod'}</b></td></tr><tr><td>while_cond: bool = eq npmod zero</td></tr><tr><td><b>{'npmod', 'while_cond'}</b></td></tr></table>>]
+	"f1-16" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod', 'while_cond'}</b></td></tr><tr><td>br while_cond .while.body .while.end</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-17" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod', 'while_cond'}</b></td></tr><tr><td>LABEL while.body</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-21" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod', 'while_cond'}</b></td></tr><tr><td>LABEL while.end</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-18" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod', 'while_cond'}</b></td></tr><tr><td>npdiv: int = div n p</td></tr><tr><td><b>{'npdiv', 'while_cond'}</b></td></tr></table>>]
+	"f1-22" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npmod', 'while_cond'}</b></td></tr><tr><td>resdiv: int = div result p</td></tr><tr><td><b>{'resdiv', 'while_cond'}</b></td></tr></table>>]
+	"f1-19" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npdiv', 'while_cond'}</b></td></tr><tr><td>n: int = id npdiv</td></tr><tr><td><b>{'npdiv', 'n'}</b></td></tr></table>>]
+	"f1-23" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'resdiv'}</b></td></tr><tr><td>result: int = sub result resdiv</td></tr><tr><td><b>{'result', 'resdiv'}</b></td></tr></table>>]
+	"f1-20" [label=<<table border="0" cellborder="1" cellspacing="0"><tr><td><b>{'npdiv', 'n'}</b></td></tr><tr><td>jmp .while.set.cond</td></tr><tr><td><b>~</b></td></tr></table>>]
+	"f1-20" -> "f1-13"
+	"f1-23" -> "f1-24"
+	"f1-19" -> "f1-20"
+	"f1-22" -> "f1-23"
+	"f1-18" -> "f1-19"
+	"f1-21" -> "f1-22"
+	"f1-17" -> "f1-18"
+	"f1-16" -> "f1-17"
+	"f1-16" -> "f1-21"
+	"f1-15" -> "f1-16"
+	"f1-26" -> "f1-4"
+	"f1-14" -> "f1-15"
+	"f1-32" -> "f1-33"
+	"f1-25" -> "f1-26"
+	"f1-13" -> "f1-14"
+	"f1-31" -> "f1-32"
+	"f1-24" -> "f1-25"
+	"f1-12" -> "f1-13"
+	"f1-33" -> "f1-34"
+	"f1-30" -> "f1-31"
+	"f1-11" -> "f1-12"
+	"f1-11" -> "f1-24"
+	"f1-29" -> "f1-30"
+	"f1-29" -> "f1-33"
+	"f1-10" -> "f1-11"
+	"f1-28" -> "f1-29"
+	"f1-9" -> "f1-10"
+	"f1-27" -> "f1-28"
+	"f1-8" -> "f1-9"
+	"f1-7" -> "f1-8"
+	"f1-7" -> "f1-27"
+	"f1-6" -> "f1-7"
+	"f1-5" -> "f1-6"
+	"f1-4" -> "f1-5"
+	"f1-3" -> "f1-4"
+	"f1-2" -> "f1-3"
+	"f1-1" -> "f1-2"
+	"f1-0" -> "f1-1"
+}

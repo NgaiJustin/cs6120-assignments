@@ -16,7 +16,7 @@ class DataFlowAnalysis(Generic[T]):
     transfer_function: Callable[[Node, T], T]
     merge_function: Callable[[List[T]], T]
 
-    visualize_mode: bool = False  # If true, track vizualized dot graph of each iter
+    visualize_mode: bool  # If true, track vizualized dot graph of each iter
     dot_graphs: List[str] = []  # List of dot graphs for each iter
 
     def __init__(
@@ -26,12 +26,14 @@ class DataFlowAnalysis(Generic[T]):
         out_sets: Dict[str, T],
         transfer_function: Callable[[Node, T], T],
         merge_function: Callable[[List[T]], T],
+        visualize_mode: bool = False,
     ) -> None:
         self.entry_node = entry_node
         self.in_sets = in_sets
         self.out_sets = out_sets
         self.transfer_function = transfer_function
         self.merge_function = merge_function
+        self.visualize_mode = visualize_mode
 
     def run(self: "DataFlowAnalysis") -> None:
         # Init worklist with all nodes in CFG
@@ -59,8 +61,8 @@ class DataFlowAnalysis(Generic[T]):
             new_out_set: T = self.transfer_function(node, in_set)
 
             if new_in_set != in_set or new_out_set != out_set:
-                print("DEBUG", new_in_set, in_set)
-                print("DEBUG", new_out_set, out_set)
+                # print("DEBUG", new_in_set, in_set)
+                # print("DEBUG", new_out_set, out_set)
                 self.in_sets[node.id] = new_in_set
                 self.out_sets[node.id] = new_out_set
                 worklist.extend(node.successors)
@@ -132,5 +134,5 @@ class DataFlowAnalysis(Generic[T]):
                         q.append(next_node)
                         visit_state[next_node.id] = -1
 
-        print(g.source)
+        # print(g.source)
         return g.source

@@ -25,7 +25,8 @@ class DotFilmStrip:
         # validate working directory exists, is a directory, and is empty
         dir = pathlib.Path(working_dir)
         if not dir.exists():
-            raise Exception("Working directory does not exist")
+            # create the directory
+            dir.mkdir(parents=True)
         if not dir.is_dir():
             raise Exception("Working directory is not a directory")
         if len(list(dir.iterdir())) != 0:

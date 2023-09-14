@@ -9,10 +9,15 @@ from dfa_framework import DataFlowAnalysis
 from node import Node
 from utils import load
 
+from dot_utils import DotFilmStrip
+
 from abc import ABC, abstractmethod
 
 
-def reaching_definition(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
+def reaching_definition(
+    cfg_root_nodes: List[Node],
+    visualize_mode: bool = False,
+) -> List[DataFlowAnalysis]:
     """Returns a data flow analysis for reaching defintions for each function in the program.
 
     Sets contain the names of variables that are defined
@@ -42,6 +47,7 @@ def reaching_definition(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
             out_sets=init_out_set,
             transfer_function=transfer_function,
             merge_function=merge_function,
+            visualize_mode=visualize_mode,
         )
         dfa.run()
         dfas.append(dfa)
@@ -185,9 +191,15 @@ if __name__ == "__main__":
     cfgs = to_cfg_fine_grain(program)
 
     # cfg_visualize(cfgs)
+    name = "ackermann-reaching-definition"
+    rd_dfas = reaching_definition(get_root_nodes(cfgs), visualize_mode=True)
 
-    rd_dfas = reaching_definition(get_root_nodes(cfgs))
-    [rd_dfa.visualize() for rd_dfa in rd_dfas]
+    rd_ex = rd_dfas[1]
+    dfs = DotFilmStrip(name)
+    dfs.dot_frames = rd_ex.dot_graphs
+    dfs.render(f"./lesson_tasks/l4/cfg-animations/{name}")
+
+    # [rd_dfa.visualize() for rd_dfa in rd_dfas]
 
     # cp_dfas = constant_propagation(get_root_nodes(cfgs))
     # [cp_dfa.visualize() for cp_dfa in cp_dfas]
