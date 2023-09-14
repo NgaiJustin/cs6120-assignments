@@ -1,12 +1,15 @@
 import sys
 from collections import defaultdict
-from typing import Callable, Iterable, List, Dict, Set
+from enum import Enum
+from typing import Callable, Dict, Iterable, List, Set, Optional
 
 from bril_type import *
 from cfg import cfg_visualize, to_cfg_fine_grain
 from dfa_framework import DataFlowAnalysis
 from node import Node
 from utils import load
+
+from abc import ABC, abstractmethod
 
 
 def reaching_definition(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
@@ -17,7 +20,10 @@ def reaching_definition(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
 
     def transfer_function(node: Node, in_set: Iterable[str]) -> Set:
         """New defintions in node, plus definitions that reach the node, minus definitions that are killed in the node."""
-        return set(in_set) | set(node.instr.get("dest", []))
+        new_set = set(in_set)
+        if "dest" in node.instr:
+            new_set.add(node.instr["dest"])
+        return new_set
 
     def merge_function(sets: Iterable[Iterable[str]]) -> Iterable:
         merge_set: Set[str] = set()
@@ -49,6 +55,45 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
     Sets contain a mapping from variable names to their constant values.
     """
 
+    class ConstantType(ABC):
+        @abstractmethod
+        def merge(self, other: "ConstantType") -> "ConstantType":
+            pass
+
+        @abstractmethod
+        def val(self) -> Optional[int]:
+            pass
+
+    class Constant(ConstantType):
+        def __init__(self, val: int):
+            self._val = val
+
+        def merge(self, other: "ConstantType") -> "ConstantType":
+            if isinstance(other, Constant):
+                if self.val() == other.val():
+                    return self
+                else:
+                    return Unknown()
+            else:
+                return other.merge(self)
+
+        def val(self) -> Optional[int]:
+            return self._val
+
+    class Unknown(ConstantType):
+        def merge(self, other: "ConstantType") -> "ConstantType":
+            return self
+
+        def val(self) -> Optional[int]:
+            return None
+
+    class Uninitialized(ConstantType):
+        def merge(self, other: "ConstantType") -> "ConstantType":
+            return other
+
+        def val(self) -> Optional[int]:
+            return None
+
     op_to_func: Dict[str, Callable] = {
         "add": lambda x, y: x + y,
         "mul": lambda x, y: x * y,
@@ -66,9 +111,6 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
 
     def transfer_function(node: Node, in_set: Dict[str, int]) -> Dict[str, int]:
         """New variables that are constants in this node, plus previous variables that are constants, minus variables that are no longer constants."""
-
-        print(node.id, node.instr)
-
         op = node.instr.get("op")
         if op is None:
             return in_set
@@ -143,7 +185,11 @@ if __name__ == "__main__":
     cfgs = to_cfg_fine_grain(program)
 
     # cfg_visualize(cfgs)
-    reaching_definition(get_root_nodes(cfgs))
-    # constant_propagation(get_root_nodes(cfgs))
+
+    # rd_dfas = reaching_definition(get_root_nodes(cfgs))
+    # [rd_dfa.visualize() for rd_dfa in rd_dfas]
+
+    cp_dfas = constant_propagation(get_root_nodes(cfgs))
+    [cp_dfa.visualize() for cp_dfa in cp_dfas]
 
     # json.dump(program, sys.stdout, indent=2)
