@@ -1,17 +1,15 @@
 import sys
+from abc import ABC, abstractmethod
 from collections import defaultdict
-from enum import Enum
-from typing import Callable, Dict, Iterable, List, Set, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Set
 
 from bril_type import *
 from cfg import cfg_visualize, to_cfg_fine_grain
 from dfa_framework import DataFlowAnalysis
-from node import Node
-from utils import load
 
 from dot_utils import DotFilmStrip
-
-from abc import ABC, abstractmethod
+from node import Node
+from utils import load
 
 
 def reaching_definition(
@@ -55,7 +53,10 @@ def reaching_definition(
     return dfas
 
 
-def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
+def constant_propagation(
+    cfg_root_nodes: List[Node],
+    visualize_mode: bool = False,
+) -> List[DataFlowAnalysis]:
     """Returns a data flow analysis for constant propagation for each function in the program.
 
     Sets contain a mapping from variable names to their constant values.
@@ -67,11 +68,11 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
             pass
 
         @abstractmethod
-        def val(self) -> Optional[int]:
+        def val(self) -> Optional[int | bool]:
             pass
 
     class Constant(ConstantType):
-        def __init__(self, val: int):
+        def __init__(self, val: int | bool):
             self._val = val
 
         def merge(self, other: "ConstantType") -> "ConstantType":
@@ -83,22 +84,52 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
             else:
                 return other.merge(self)
 
-        def val(self) -> Optional[int]:
+        def val(self) -> Optional[int | bool]:
             return self._val
+
+        def __str__(self):
+            return str(self._val)
+
+        def __repr__(self):
+            return str(self._val)
+
+        def __eq__(self, other):
+            if isinstance(other, Constant):
+                return self._val == other._val
+            else:
+                return False
 
     class Unknown(ConstantType):
         def merge(self, other: "ConstantType") -> "ConstantType":
             return self
 
-        def val(self) -> Optional[int]:
+        def val(self) -> Optional[int | bool]:
             return None
+
+        def __str__(self):
+            return "Unknown"
+
+        def __repr__(self):
+            return "Unknown"
+
+        def __eq__(self, other):
+            return isinstance(other, Unknown)
 
     class Uninitialized(ConstantType):
         def merge(self, other: "ConstantType") -> "ConstantType":
             return other
 
-        def val(self) -> Optional[int]:
+        def val(self) -> Optional[int | bool]:
             return None
+
+        def __str__(self):
+            return ""
+
+        def __repr__(self):
+            return ""
+
+        def __eq__(self, other):
+            return isinstance(other, Uninitialized)
 
     op_to_func: Dict[str, Callable] = {
         "add": lambda x, y: x + y,
@@ -115,7 +146,9 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
         "not": lambda x: not x,
     }
 
-    def transfer_function(node: Node, in_set: Dict[str, int]) -> Dict[str, int]:
+    def transfer_function(
+        node: Node, in_set: Dict[str, ConstantType]
+    ) -> Dict[str, ConstantType]:
         """New variables that are constants in this node, plus previous variables that are constants, minus variables that are no longer constants."""
         op = node.instr.get("op")
         if op is None:
@@ -128,7 +161,7 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
             dest = node.instr.get("dest")
             val = node.instr.get("value")
             if dest is not None and val is not None:
-                new_mapping[dest] = val
+                new_mapping[dest] = Constant(val)
 
         # Operations with constants - add to mapping
         elif op in op_to_func.keys():
@@ -139,29 +172,36 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
                     arg0 = args[0]
                     arg1 = args[1]
                     if arg0 in in_set and arg1 in in_set:
-                        new_mapping[dest] = op_to_func[op](in_set[arg0], in_set[arg1])
+                        new_mapping[dest] = Constant(
+                            op_to_func[op](in_set[arg0], in_set[arg1])
+                        )
                 elif len(args) == 1:
                     arg0 = args[0]
                     if arg0 in in_set:
-                        new_mapping[dest] = op_to_func[op](in_set[arg0])
+                        new_mapping[dest] = Constant(op_to_func[op](in_set[arg0]))
 
-        # Override existing constant - remove from mapping
+        # Override existing constant - set to unknown
         elif "dest" in node.instr:
             dest = node.instr.get("dest")
             if dest in in_set:
-                del new_mapping[dest]
+                new_mapping[dest] = Unknown()
 
         return new_mapping
 
-    def merge_function(sets: Iterable[Dict[str, int]]) -> Dict[str, int]:
-        merge_set: Dict[str, int] = {}
+    def merge_function(
+        sets: Iterable[Dict[str, ConstantType]]
+    ) -> Dict[str, ConstantType]:
+        merge_set: Dict[str, ConstantType] = {}
         for s in sets:
             for k, v in s.items():
-                merge_set[k] = v
+                if merge_set.get(k) is None:
+                    merge_set[k] = v
+                else:
+                    merge_set[k] = merge_set[k].merge(v)
         return merge_set
 
-    init_in_set: Dict[str, Dict[str, int]] = defaultdict(defaultdict)
-    init_out_set: Dict[str, Dict[str, int]] = defaultdict(defaultdict)
+    init_in_set: Dict[str, Dict[str, ConstantType]] = defaultdict(defaultdict)
+    init_out_set: Dict[str, Dict[str, ConstantType]] = defaultdict(defaultdict)
 
     dfas = []
     for root_node in cfg_root_nodes:
@@ -171,6 +211,7 @@ def constant_propagation(cfg_root_nodes: List[Node]) -> List[DataFlowAnalysis]:
             out_sets=init_out_set,
             transfer_function=transfer_function,
             merge_function=merge_function,
+            visualize_mode=visualize_mode,
         )
         dfa.run()
         dfas.append(dfa)
@@ -190,18 +231,27 @@ if __name__ == "__main__":
 
     cfgs = to_cfg_fine_grain(program)
 
-    # cfg_visualize(cfgs)
-    name = "catalan-reaching-definitons"
-    rd_dfas = reaching_definition(get_root_nodes(cfgs), visualize_mode=True)
+    ####################################################################################
+    ## Run reaching definitions DFA on Catalan example and generate DFA animation
+    # name = "catalan-reaching-definitons"
+    # rd_dfas = reaching_definition(get_root_nodes(cfgs), visualize_mode=True)
 
-    rd_ex = rd_dfas[1]
-    dfs = DotFilmStrip(name)
-    dfs.dot_frames = rd_ex.dot_graphs
-    dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
+    # rd_ex = rd_dfas[1]
+    # dfs = DotFilmStrip(name)
+    # dfs.dot_frames = rd_ex.dot_graphs
+    # dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
+    ####################################################################################
 
-    # [rd_dfa.visualize() for rd_dfa in rd_dfas]
+    ####################################################################################
+    ## Run constant prop DFA on Catalan example and generate DFA animation
+    name = "catalan-constant-prop"
+    cp_dfas = constant_propagation(get_root_nodes(cfgs), visualize_mode=False)
+    print([cp_dfa.visualize() for cp_dfa in cp_dfas][1])
 
-    # cp_dfas = constant_propagation(get_root_nodes(cfgs))
-    # [cp_dfa.visualize() for cp_dfa in cp_dfas]
+    # cp_ex = cp_dfas[1]
+    # dfs = DotFilmStrip(name)
+    # dfs.dot_frames = cp_ex.dot_graphs
+    # dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
+    ####################################################################################
 
     # json.dump(program, sys.stdout, indent=2)

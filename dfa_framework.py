@@ -60,9 +60,11 @@ class DataFlowAnalysis(Generic[T]):
             )
             new_out_set: T = self.transfer_function(node, in_set)
 
+            print(f"DEBUG: {node.id} {node.instr}")
+
             if new_in_set != in_set or new_out_set != out_set:
-                # print("DEBUG", new_in_set, in_set)
-                # print("DEBUG", new_out_set, out_set)
+                print("DEBUG", new_in_set, in_set)
+                print("DEBUG", new_out_set, out_set)
                 self.in_sets[node.id] = new_in_set
                 self.out_sets[node.id] = new_out_set
                 worklist.extend(node.successors)
@@ -80,7 +82,7 @@ class DataFlowAnalysis(Generic[T]):
         import briltxt  # type: ignore
 
         g = graphviz.Digraph()
-        g.attr("node", shape="none", width="1in")  # Remove border around nodes
+        g.attr("node", shape="none")  # Remove border around nodes
 
         # init cfg_nodes as all nodes reachable from entry_node
         seen: Set[str] = set()
