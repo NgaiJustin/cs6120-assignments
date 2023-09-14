@@ -8,6 +8,11 @@ import graphviz  # type: ignore
 from moviepy.editor import ImageClip, concatenate_videoclips  # type: ignore
 
 
+# custom key for ordering dot_file names representing frames
+def dot_file_key(dot_file: str) -> int:
+    return int(dot_file.split("-")[-1].split(".")[0])
+
+
 class DotFilmStrip:
     name: str
     dot_frames: List[str] = []
@@ -21,7 +26,9 @@ class DotFilmStrip:
     def clear_frames(self) -> None:
         self.dot_frames.clear()
 
-    def render(self, working_dir: str, duration: int = 600) -> None:
+    def render(self, working_dir: str, duration: int = 2) -> None:
+        image_paths = []
+
         # validate working directory exists, is a directory, and is empty
         dir = pathlib.Path(working_dir)
         if not dir.exists():
@@ -32,38 +39,46 @@ class DotFilmStrip:
         if len(list(dir.iterdir())) != 0:
             # Ask user if they want to overwrite the directory
             print(f"Working directory is not empty: {working_dir}")
-            for file in os.listdir(working_dir):
+            for file in sorted(os.listdir(working_dir), key=dot_file_key):
                 print(f"  - {file}")
-
             print("Do you want to overwrite the directory? [y/n]")
             overwrite = input()
             if overwrite.lower() == "y":
                 # delete all files in the directory
-                for file in os.listdir(working_dir):
+                for file in sorted(os.listdir(working_dir), key=dot_file_key):
                     os.remove(os.path.join(working_dir, file))
             else:
-                raise Exception("Working directory is not empty")
+                # use png files in the directory to create the gif
+                print("Using existing files to create gif")
+                image_paths = [
+                    os.path.join(working_dir, img)
+                    for img in sorted(os.listdir(working_dir), key=dot_file_key)
+                    if img.endswith(".png")
+                ]
 
-        # render each frame
-        for i, dot_str in enumerate(self.dot_frames):
-            dot = graphviz.Source(dot_str)
-            dot.render(filename=f"{self.name}-{i}", directory=working_dir, format="png")
+        if len(image_paths) == 0:
+            # render dot files to png files
+            for i, dot_str in enumerate(self.dot_frames):
+                dot = graphviz.Source(dot_str)
+                dot.render(
+                    filename=f"{self.name}-{i}", directory=working_dir, format="png"
+                )
+            # get list of png files in working directory
+            image_paths = [
+                os.path.join(working_dir, img)
+                for img in sorted(os.listdir(working_dir), key=dot_file_key)
+                if img.endswith(".png")
+            ]
 
         # combine frames into a gif
         gif_name = f"{self.name}.gif"
         gif_path = os.path.join(working_dir, gif_name)
-
-        image_paths = [
-            os.path.join(working_dir, img)
-            for img in sorted(os.listdir(working_dir))
-            if img.endswith(".png")
-        ]
         if len(image_paths) == 0:
             raise Exception("No images found in working directory")
         else:
             clips = [ImageClip(m).set_duration(duration) for m in image_paths]
             concat_clip = concatenate_videoclips(clips, method="compose")
-            concat_clip.write_gif(gif_path, fps=2)
+            concat_clip.write_gif(gif_path, fps=0.5)
 
 
 if __name__ == "__main__":
