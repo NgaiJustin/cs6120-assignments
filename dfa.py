@@ -191,13 +191,13 @@ if __name__ == "__main__":
     cfgs = to_cfg_fine_grain(program)
 
     # cfg_visualize(cfgs)
-    name = "ackermann-reaching-definition"
+    name = "catalan-reaching-definitons"
     rd_dfas = reaching_definition(get_root_nodes(cfgs), visualize_mode=True)
 
     rd_ex = rd_dfas[1]
     dfs = DotFilmStrip(name)
     dfs.dot_frames = rd_ex.dot_graphs
-    dfs.render(f"./lesson_tasks/l4/cfg-animations/{name}")
+    dfs.render(f"./lesson_tasks/l4/dfa-animations/{name}")
 
     # [rd_dfa.visualize() for rd_dfa in rd_dfas]
 
