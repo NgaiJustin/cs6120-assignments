@@ -186,10 +186,10 @@ if __name__ == "__main__":
 
     # cfg_visualize(cfgs)
 
-    # rd_dfas = reaching_definition(get_root_nodes(cfgs))
-    # [rd_dfa.visualize() for rd_dfa in rd_dfas]
+    rd_dfas = reaching_definition(get_root_nodes(cfgs))
+    [rd_dfa.visualize() for rd_dfa in rd_dfas]
 
-    cp_dfas = constant_propagation(get_root_nodes(cfgs))
-    [cp_dfa.visualize() for cp_dfa in cp_dfas]
+    # cp_dfas = constant_propagation(get_root_nodes(cfgs))
+    # [cp_dfa.visualize() for cp_dfa in cp_dfas]
 
     # json.dump(program, sys.stdout, indent=2)

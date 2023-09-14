@@ -9,13 +9,29 @@ import graphviz  # type: ignore
 T = TypeVar("T")
 
 
-@dataclass(frozen=True)
 class DataFlowAnalysis(Generic[T]):
     entry_node: Node
     in_sets: Dict[str, T]
     out_sets: Dict[str, T]
     transfer_function: Callable[[Node, T], T]
     merge_function: Callable[[List[T]], T]
+
+    visualize_mode: bool = False  # If true, track vizualized dot graph of each iter
+    dot_graphs: List[str] = []  # List of dot graphs for each iter
+
+    def __init__(
+        self: "DataFlowAnalysis",
+        entry_node: Node,
+        in_sets: Dict[str, T],
+        out_sets: Dict[str, T],
+        transfer_function: Callable[[Node, T], T],
+        merge_function: Callable[[List[T]], T],
+    ) -> None:
+        self.entry_node = entry_node
+        self.in_sets = in_sets
+        self.out_sets = out_sets
+        self.transfer_function = transfer_function
+        self.merge_function = merge_function
 
     def run(self: "DataFlowAnalysis") -> None:
         # Init worklist with all nodes in CFG
@@ -50,6 +66,8 @@ class DataFlowAnalysis(Generic[T]):
                 worklist.extend(node.successors)
 
             iters += 1
+            if self.visualize_mode:
+                self.dot_graphs.append(self.visualize())
 
         print(f"Ran {iters} iterations")
 
