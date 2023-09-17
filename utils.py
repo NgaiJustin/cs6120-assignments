@@ -1,4 +1,4 @@
-"""Utility functions for working with Bril programs used by both tdce.py and lvn.py."""
+"""Utility functions for working with Bril programs"""
 
 import argparse
 import json

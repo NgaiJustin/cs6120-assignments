@@ -7,7 +7,7 @@ from bril_type import *
 from cfg import cfg_visualize, to_cfg_fine_grain
 from dfa_framework import DataFlowAnalysis
 
-from dot_utils import DotFilmStrip
+from dot import DotFilmStrip
 from node import Node
 from utils import load
 

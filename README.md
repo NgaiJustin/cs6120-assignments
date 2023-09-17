@@ -20,5 +20,5 @@ Benchmarks are taken from [https://github.com/sampsyo/bril](https://github.com/s
 * `cfg` - A simple library that construst control flow graphs from bril programs and also visualizes them in dot format.
 * `dfa` - Implementations of data flow analyses using the framework (currently includes constant propagation and reaching definitions).
 * `dfa_framework` - A generic solver framework for implementing data flow analyses.
-* `dot_util` - A series of functions to help with manipulating dot files, most notably it can create an animation from series of dot files.
+* `dot` - A series of functions to help with manipulating dot files, most notably it can create an animation from series of dot files.
 * `node` - A representation of a node in a control flow graph.
