@@ -223,7 +223,7 @@ def get_root_nodes(cfg_nodes: List[Node]) -> List[Node]:
 
 
 if __name__ == "__main__":
-    program: Program = load()
+    program, _ = load()
 
     if program is None:
         sys.exit(1)

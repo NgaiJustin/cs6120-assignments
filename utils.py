@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 from bril_type import *
 
 
-def load(cli_flags: List[str] = []) -> Tuple[Program, Dict]:
+def load(cli_flags: List[str] = []) -> Tuple[Program, Dict[str, str]]:
     """Load a .bril program from the command line or stdin, expecting the specified cli_flags"""
 
     parser = argparse.ArgumentParser(exit_on_error=True)

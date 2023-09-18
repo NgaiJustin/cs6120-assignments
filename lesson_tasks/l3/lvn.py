@@ -111,7 +111,7 @@ def lvn(block: Block):
 
 
 if __name__ == "__main__":
-    program = load()
+    program, _ = load()
 
     if program is None:
         sys.exit(1)
