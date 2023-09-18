@@ -3,34 +3,24 @@
 import argparse
 import json
 import sys
+from typing import Dict, List, Tuple
 
 from bril_type import *
 
 
-def load() -> Program:
-    """Load a .bril program from the command line or stdin."""
+def load(cli_flags: List[str] = []) -> Tuple[Program, Dict]:
+    """Load a .bril program from the command line or stdin, expecting the specified cli_flags"""
 
-    # If no file is specified, read from stdin
-    if len(sys.argv) == 1:
-        return json.load(sys.stdin)
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "f",
-        help="The name of the file to load",
-        type=argparse.FileType("r"),
-        default=sys.stdin,
-    )
+    parser = argparse.ArgumentParser(exit_on_error=True)
+    for cli_flag in cli_flags:
+        parser.add_argument(cli_flag)
     args = parser.parse_args()
 
     try:
-        return json.load(args.f)
-    except FileNotFoundError:
-        print("File not found")
-        return Program(functions=[])
+        return (json.load(sys.stdin), vars(args))
     except json.JSONDecodeError:
         print("Invalid JSON")
-        return Program(functions=[])
+        return (Program(functions=[]), vars(args))
 
 
 def flatten(blocks: list[list[Instruction]]):
