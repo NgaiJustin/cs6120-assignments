@@ -13,6 +13,13 @@ from node import Node, visualize
 from utils import load
 
 
+def strictly_dominates(node_a: Node, node_b: Node, b_dominators: Set[Node]) -> bool:
+    """
+    Return true if node_a strictly dominates node_b.
+    """
+    return node_a in b_dominators and node_a != node_b
+
+
 def _get_dominators(entry: Node) -> Dict[Node, Set[Node]]:
     """
     Return the set of dominators for all nodes in a CFG.
@@ -58,7 +65,7 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
     """
     dom_tree_nodes: List[Node] = []
 
-    for node_a, a_dominators in doms.items():
+    for node_a, _ in doms.items():
         for node_b, b_dominators in doms.items():
             if node_a == node_b:
                 if len(node_a.predecessors) == 0:
@@ -75,7 +82,7 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
             else:
                 # if A dominates B, and A does not strictly dominate any other node that strictly dominates B
                 if node_a in b_dominators and not any(
-                    node_a in doms[node_c] and node_a != node_c
+                    strictly_dominates(node_a, node_c, doms[node_c])
                     for node_c in b_dominators
                     if node_c != node_b
                 ):
