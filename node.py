@@ -24,8 +24,20 @@ class Node:
     def __hash__(self):
         return hash(self.id)
 
+    def __eq__(self, other):
+        return self.id == other.id
 
-def visualize(nodes: List[Node]):
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "predecessors": [node.id for node in self.predecessors],
+            "successors": [node.id for node in self.successors],
+            "instr": self.instr,
+            "label": self.label,
+        }
+
+
+def visualize(nodes: List[Node], forward: bool = True):
     """Visualize a graph (CFG, Dominator Tree, etc.) using graphviz.
 
     Paste output in https://edotor.net/ for a pretty diagram"""
@@ -56,8 +68,10 @@ def visualize(nodes: List[Node]):
         elif visit_state[node.id] == -1:  # Loop
             visit_state[node.id] = 1
         else:
-            for next_node in node.successors:
-                g.edge(node.id, next_node.id)
+            for next_node in node.successors if forward else node.predecessors:
+                a = node.id if forward else next_node.id
+                b = next_node.id if forward else node.id
+                g.edge(a, b)
 
                 if visit_state[next_node.id] == 1:
                     q.append(next_node)

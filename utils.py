@@ -13,7 +13,7 @@ def load(cli_flags: List[str] = []) -> Tuple[Program, Dict[str, str]]:
 
     parser = argparse.ArgumentParser(exit_on_error=True)
     for cli_flag in cli_flags:
-        parser.add_argument(cli_flag)
+        parser.add_argument(cli_flag, action="store_true")
     args = parser.parse_args()
 
     try:

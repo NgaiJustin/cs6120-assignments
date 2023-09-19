@@ -1,7 +1,8 @@
 from typing import Dict, List
 
 from bril_type import *
-from node import Node
+from node import Node, visualize
+from utils import load
 
 
 def to_cfg_fine_grain(bril: Program) -> List[Node]:
@@ -60,3 +61,14 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
         cfg_nodes.extend(nodes)
 
     return cfg_nodes
+
+
+def get_entry_nodes(nodes: List[Node]) -> List[Node]:
+    """Return the entry nodes (one for each function) of a CFG."""
+    return [node for node in nodes if len(node.predecessors) == 0]
+
+
+if __name__ == "__main__":
+    program, cli_flags = load()
+
+    print(visualize(to_cfg_fine_grain(program)))
