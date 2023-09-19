@@ -31,7 +31,6 @@ def visualize(nodes: List[Node]):
     Paste output in https://edotor.net/ for a pretty diagram"""
     import briltxt  # type: ignore
 
-    print("Visualizing CFG")
     g = graphviz.Digraph()
 
     # Initialize nodes
