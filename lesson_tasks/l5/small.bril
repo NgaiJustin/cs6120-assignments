@@ -1,0 +1,13 @@
+@main {
+.entry:
+  br true .a .b;
+
+.a:
+  jmp .exit;
+
+.b:
+  jmp .exit;
+
+.exit:
+  nop;
+}
