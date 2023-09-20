@@ -92,7 +92,7 @@ class DotFilmStrip:
         else:
             clips = [ImageClip(m).set_duration(duration) for m in image_paths]
             concat_clip = concatenate_videoclips(clips, method="compose")
-            concat_clip.write_gif(gif_path, fps=0.5)
+            concat_clip.write_gif(gif_path, fps=1)
 
 
 if __name__ == "__main__":

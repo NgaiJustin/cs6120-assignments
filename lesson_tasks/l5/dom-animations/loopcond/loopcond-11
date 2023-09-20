@@ -1,0 +1,47 @@
+digraph {
+	"f0-0" [label="LABEL <entry>" color=black style=""]
+	"f0-1" [label="x: int = const 0" color=black style=""]
+	"f0-2" [label="i: int = const 0" color=black style=""]
+	"f0-3" [label="one: int = const 1" color=black style=""]
+	"f0-4" [label="LABEL <loop>" color=red style=dotted]
+	"f0-5" [label="max: int = const 10" color=black style=""]
+	"f0-6" [label="cond: bool = lt i max" color=black style=""]
+	"f0-7" [label="br cond .body .exit" color=black style=""]
+	"f0-8" [label="LABEL <body>" color=black style=""]
+	"f0-9" [label="mid: int = const 5" color=black style=""]
+	"f0-10" [label="cond: bool = lt i mid" color=black style=""]
+	"f0-11" [label="br cond .then .endif" color=blue style=""]
+	"f0-12" [label="LABEL <then>" color=red style=""]
+	"f0-13" [label="x: int = add x one" color=red style=""]
+	"f0-14" [label="jmp .endif" color=red style=""]
+	"f0-15" [label="LABEL <endif>" color=red style=""]
+	"f0-16" [label="factor: int = const 2" color=red style=""]
+	"f0-17" [label="x: int = mul x factor" color=red style=""]
+	"f0-18" [label="i: int = add i one" color=red style=""]
+	"f0-19" [label="jmp .loop" color=red style=""]
+	"f0-20" [label="LABEL <exit>" color=black style=""]
+	"f0-21" [label="print x" color=black style=""]
+	"f0-20" -> "f0-21"
+	"f0-7" -> "f0-20"
+	"f0-18" -> "f0-19"
+	"f0-17" -> "f0-18"
+	"f0-16" -> "f0-17"
+	"f0-15" -> "f0-16"
+	"f0-14" -> "f0-15"
+	"f0-11" -> "f0-15"
+	"f0-13" -> "f0-14"
+	"f0-12" -> "f0-13"
+	"f0-11" -> "f0-12"
+	"f0-10" -> "f0-11"
+	"f0-9" -> "f0-10"
+	"f0-8" -> "f0-9"
+	"f0-7" -> "f0-8"
+	"f0-6" -> "f0-7"
+	"f0-5" -> "f0-6"
+	"f0-4" -> "f0-5"
+	"f0-19" -> "f0-4"
+	"f0-3" -> "f0-4"
+	"f0-2" -> "f0-3"
+	"f0-1" -> "f0-2"
+	"f0-0" -> "f0-1"
+}
