@@ -3,7 +3,6 @@ A series of dominance utilities functions including
 - Constructing the dominance tree [-t]
 - Computing the dominance frontier [-f]
 """
-import json
 import sys
 from collections import deque
 from typing import Dict, List, Set
