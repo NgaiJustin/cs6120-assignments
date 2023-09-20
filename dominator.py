@@ -4,6 +4,7 @@ A series of dominance utilities functions including
 - Computing the dominance frontier [-f]
 """
 import sys
+import json
 from collections import deque
 from typing import Dict, List, Set
 
@@ -16,6 +17,8 @@ from utils import load
 def strictly_dominates(node_a: Node, node_b: Node, b_dominators: Set[Node]) -> bool:
     """
     Return true if node_a strictly dominates node_b.
+
+    A strictly dominates B iff A dominates B and A ≠ B.
     """
     return node_a in b_dominators and node_a != node_b
 
@@ -86,7 +89,6 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
                     for node_c in b_dominators
                     if node_c != node_b
                 ):
-                    print(f"{node_a.id} dominates {node_b.id}")
                     dom_tree_node = Node(
                         id=node_b.id,
                         predecessors=set([node_a]),  # all dominators except self
@@ -99,11 +101,84 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
     return dom_tree_nodes
 
 
-def dominance_frontier(cfg: List[Node]) -> List[Node]:
+def dominance_frontier(a: Node) -> List[Node]:
     """
-    Compute the dominance frontier of a CFG.
+    Compute the dominance frontier for a given node.
+
+    A dominance frontier is the set of nodes that are just “one edge away” from being dominated by a given node.
     """
-    return cfg
+    # get entry node
+    entry_node = a
+    q = deque([entry_node])
+    while q:
+        temp_node = q.popleft()
+        if len(temp_node.predecessors) >= 1:
+            q.extend(temp_node.predecessors)
+        else:
+            entry_node = temp_node
+            break
+
+    doms = _get_dominators(entry_node)
+    all_nodes = set(doms.keys())
+
+    # A’s dominance frontier contains B iff A does not strictly dominate B, but A does dominate some predecessor of B.
+    frontier = [
+        b
+        for b in all_nodes
+        if not strictly_dominates(a, b, doms[b])
+        and any([a in doms[pre_node_b] for pre_node_b in b.predecessors])
+    ]
+
+    return frontier
+
+
+def visualize_frontier(
+    key_node: Node,
+    frontier: List[Node],
+    tree_nodes: List[Node],
+    forward: bool = True,
+):
+    import graphviz  # type: ignore
+
+    import briltxt  # type: ignore
+
+    g = graphviz.Digraph()
+
+    # Initialize nodes
+    for node in tree_nodes:
+        color = "blue" if node == key_node else ("red" if node in frontier else "black")
+        g.node(
+            node.id,
+            briltxt.instr_to_string(node.instr)
+            if "op" in node.instr
+            else f"LABEL <{node.instr.get('label')}>",  # must be label
+            color=color,
+        )
+
+    # key: node id
+    # value: 0 = unvisited, -1 = visiting, 1 = visited
+    visit_state: Dict[str, int] = {node.id: 0 for node in tree_nodes}
+
+    q: deque[Node] = deque(tree_nodes)
+
+    while len(q) > 0:
+        node = q.pop()
+
+        if visit_state[node.id] == 1:  # Already visited
+            continue
+        elif visit_state[node.id] == -1:  # Loop
+            visit_state[node.id] = 1
+        else:
+            for next_node in node.successors if forward else node.predecessors:
+                a = node.id if forward else next_node.id
+                b = next_node.id if forward else node.id
+                g.edge(a, b)
+
+                if visit_state[next_node.id] == 1:
+                    q.append(next_node)
+                    visit_state[next_node.id] = -1
+
+    return g.source
 
 
 if __name__ == "__main__":
@@ -120,10 +195,14 @@ if __name__ == "__main__":
     entry_nodes = get_entry_nodes(cfg_nodes)
     doms = _get_dominators(entry_nodes[0])  # TODO: pick the first function (for now)
 
-    if "t" in cli_flags:
+    if cli_flags["t"]:
         t = dominance_tree(doms)
         print(visualize(t, forward=False))
 
-    elif "f" in cli_flags:
-        f = dominance_frontier(cfg_nodes)
-        print(visualize(f))
+    elif cli_flags["f"]:
+        t = dominance_tree(doms)
+        frontiers = [dominance_frontier(node) for node in cfg_nodes]
+
+        i = 2
+        print(frontiers[i])
+        print(visualize_frontier(cfg_nodes[i], frontiers[i], cfg_nodes, False))
