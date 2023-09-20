@@ -22,3 +22,6 @@ Benchmarks are taken from [https://github.com/sampsyo/bril](https://github.com/s
 * `dfa_framework` - A generic solver framework for implementing data flow analyses.
 * `dot` - A series of functions to help with manipulating dot files, most notably it can create an animation from series of dot files.
 * `node` - A representation of a node in a control flow graph.
+
+#### L5 Additions:
+* `dominator` - A library for computing dominator trees and dominator frontiers.
