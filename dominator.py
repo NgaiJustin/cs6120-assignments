@@ -3,8 +3,8 @@ A series of dominance utilities functions including
 - Constructing the dominance tree [-t]
 - Computing the dominance frontier [-f]
 """
-import sys
 import json
+import sys
 from collections import deque
 from typing import Dict, List, Set
 
@@ -135,24 +135,34 @@ def dominance_frontier(a: Node) -> List[Node]:
 def visualize_frontier(
     key_node: Node,
     frontier: List[Node],
+    doms: Dict[Node, Set[Node]],
     tree_nodes: List[Node],
     forward: bool = True,
 ):
-    import graphviz  # type: ignore
-
     import briltxt  # type: ignore
+    import graphviz  # type: ignore
 
     g = graphviz.Digraph()
 
     # Initialize nodes
+    # - key nodes are red,
+    # - dominated nodes are red
+    #   - frontier nodes are dotted
+    # - rest are black
     for node in tree_nodes:
-        color = "blue" if node == key_node else ("red" if node in frontier else "black")
+        color = "black"
+        if node == key_node:
+            color = "blue"
+        elif key_node in doms[node] or node in frontier:
+            color = "red"
+
         g.node(
             node.id,
             briltxt.instr_to_string(node.instr)
             if "op" in node.instr
             else f"LABEL <{node.instr.get('label')}>",  # must be label
             color=color,
+            style="dotted" if node in frontier else "",
         )
 
     # key: node id
@@ -203,6 +213,6 @@ if __name__ == "__main__":
         t = dominance_tree(doms)
         frontiers = [dominance_frontier(node) for node in cfg_nodes]
 
-        i = 2
+        i = 5
         print(frontiers[i])
-        print(visualize_frontier(cfg_nodes[i], frontiers[i], cfg_nodes, False))
+        print(visualize_frontier(cfg_nodes[i], frontiers[i], doms, cfg_nodes, False))
