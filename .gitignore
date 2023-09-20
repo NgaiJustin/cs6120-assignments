@@ -16,3 +16,7 @@
 # pycache
 **/__pycache__/
 **/venv/
+
+# Misc.
+**/.vscode/
+**/.DS_Store
