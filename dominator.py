@@ -226,7 +226,7 @@ if __name__ == "__main__":
                 )
         else:
             # visualize animation for dominance relation for all nodes in CFG
-            name = "small"
+            name = "perfect"
             dfs = DotFilmStrip(name)
             dfs.extend_frames(
                 [
