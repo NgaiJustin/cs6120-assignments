@@ -1,0 +1,18 @@
+digraph {
+	"f0-0" [label="LABEL <entry>" color=black style=""]
+	"f0-1" [label="br true .a .b" color=black style=""]
+	"f0-2" [label="LABEL <a>" color=black style=""]
+	"f0-3" [label="jmp .exit" color=black style=""]
+	"f0-4" [label="LABEL <b>" color=black style=""]
+	"f0-5" [label="jmp .exit" color=blue style=""]
+	"f0-6" [label="LABEL <exit>" color=red style=dotted]
+	"f0-7" [label=nop color=black style=""]
+	"f0-6" -> "f0-7"
+	"f0-3" -> "f0-6"
+	"f0-5" -> "f0-6"
+	"f0-4" -> "f0-5"
+	"f0-1" -> "f0-4"
+	"f0-2" -> "f0-3"
+	"f0-1" -> "f0-2"
+	"f0-0" -> "f0-1"
+}
