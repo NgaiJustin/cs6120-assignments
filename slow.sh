@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# first argument is the input file
-INPUT_FILE=$1
+# first argument is the number of times to repeat each frame
+REPEATS=$1
+
+# second argument is the input file
+INPUT_FILE=$2
 
 # output file name is the input_file name with "-slow" appended before the extension
 OUTPUT_FILE=$(echo $INPUT_FILE | sed 's/\(.*\)\.\(.*\)/\1-slow.\2/')
@@ -10,7 +13,7 @@ OUTPUT_FILE=$(echo $INPUT_FILE | sed 's/\(.*\)\.\(.*\)/\1-slow.\2/')
 count=$(gifsicle --info < $INPUT_FILE | grep "<stdin>" | cut -d\  -f 3)
 
 # 2. define how many times to repeat frames
-repeats=10
+repeats=$REPEATS
 
 # 3. construct new frame list
 frames=$(for i in $(seq 0 $((count - 1)))
