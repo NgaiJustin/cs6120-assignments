@@ -54,7 +54,16 @@ class Node:
         return hash(self.id)
 
     def __eq__(self, other):
-        return self.id == other.id
+        return isinstance(other, Node) and self.id == other.id
+
+    def __lt__(self, other):
+        self_fi, self_ii = self.id.split("-")
+        self_fi, self_ii = int(self_fi[1:]), int(self_ii)
+
+        other_fi, other_ii = other.id.split("-")
+        other_fi, other_ii = int(other_fi[1:]), int(other_ii)
+
+        return (self_fi, self_ii) < (other_fi, other_ii)
 
     def to_dict(self):
         return {
@@ -137,7 +146,7 @@ def visualize_from_nodes(nodes: List[Node], forward: bool = True):
     g = graphviz.Digraph()
 
     # Initialize nodes
-    for node in nodes:
+    for node in sorted(nodes):
         node_desc = ""
         if node.phi_node is not None:
             node_desc += f"PHI: {node.phi_node.to_dict()}\\n"

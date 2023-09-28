@@ -149,7 +149,7 @@ def visualize_frontier(
     # - dominated nodes are red
     #   - frontier nodes are dotted
     # - rest are black
-    for node in tree_nodes:
+    for node in sorted(tree_nodes):
         color = "black"
         if node == key_node:
             color = "blue"
