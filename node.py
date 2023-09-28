@@ -135,10 +135,10 @@ def visualize(entry_node: Node, forward: bool = True):
         seen.add(node)
         q.extend([succ for succ in node.successors if succ not in seen])
 
-    return visualize_from_nodes(list(seen), forward)
+    return visualize_from_nodes(list(seen))
 
 
-def visualize_from_nodes(nodes: List[Node], forward: bool = True):
+def visualize_from_nodes(nodes: List[Node]):
     """
     Visualize a graph (CFG, Dominator Tree, etc.) using graphviz.
 
@@ -183,9 +183,9 @@ def visualize_from_nodes(nodes: List[Node], forward: bool = True):
         elif visit_state[node.id] == -1:  # Loop
             visit_state[node.id] = 1
         else:
-            for next_node in node.successors if forward else node.predecessors:
-                a = node.id if forward else next_node.id
-                b = next_node.id if forward else node.id
+            for next_node in node.successors:
+                a = node.id
+                b = next_node.id
                 g.edge(a, b)
 
                 if visit_state[next_node.id] == 1:
