@@ -8,12 +8,42 @@ from bril_type import *
 
 
 @dataclass(frozen=True)
+class PhiNode:
+    # new_var_name -> {node.id -> old_var_name}
+    phi_dict: Dict[str, Dict[str, str]] = {}
+
+    def add_var(self, new_var_name: str, node_id: str, old_var_name: str):
+        """
+        Add a new variable to the phi node. If the variable already exists, do nothing.
+        """
+        if new_var_name not in self.phi_dict:
+            self.phi_dict[new_var_name] = {}
+        if node_id not in self.phi_dict[new_var_name]:
+            self.phi_dict[new_var_name][node_id] = old_var_name
+
+    def update_var(self, new_var_name: str, old_var_name: str, node_id: str):
+        """
+        TODO: May have to update key logic
+        """
+        if new_var_name not in self.phi_dict:
+            raise Exception(f"Variable {new_var_name} not in phi node")
+        if old_var_name not in self.phi_dict[new_var_name]:
+            raise Exception(f"Variable {old_var_name} not in phi node")
+
+        self.phi_dict[new_var_name][old_var_name] = node_id
+
+    def to_dict(self):
+        return self.phi_dict
+
+
+@dataclass
 class Node:
     id: str
     predecessors: Set["Node"]
     successors: Set["Node"]
     instr: Instruction
     label: Optional[str]
+    phi_node: Optional[PhiNode] = None
 
     def __str__(self):
         return f"{self.instr}"
@@ -34,6 +64,9 @@ class Node:
             "successors": [node.id for node in self.successors],
             "instr": self.instr,
             "label": self.label,
+            "phi_node": self.phi_node
+            if self.phi_node is None
+            else self.phi_node.to_dict(),
         }
 
 
