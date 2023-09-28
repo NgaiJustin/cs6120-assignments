@@ -132,7 +132,6 @@ def visualize_frontier(
     frontier: List[Node],
     doms: Dict[Node, Set[Node]],
     tree_nodes: List[Node],
-    forward: bool = True,
 ):
     import briltxt  # type: ignore
     import graphviz  # type: ignore
@@ -174,9 +173,9 @@ def visualize_frontier(
         elif visit_state[node.id] == -1:  # Loop
             visit_state[node.id] = 1
         else:
-            for next_node in node.successors if forward else node.predecessors:
-                a = node.id if forward else next_node.id
-                b = next_node.id if forward else node.id
+            for next_node in node.successors:
+                a = node.id
+                b = next_node.id
                 g.edge(a, b)
 
                 if visit_state[next_node.id] == 1:
@@ -229,16 +228,12 @@ if __name__ == "__main__":
             doms = _get_dominators(cfg_root_nodes[i].entry_node)
             t = dominance_tree(doms)
 
-            frontiers = [dominance_frontier(node) for node in cfg_nodes]
+            frontiers = [(node, dominance_frontier(node)) for node in sorted(cfg_nodes)]
 
             if not cli_flags["v"]:
-                for i in range(len(cfg_nodes)):
-                    print(f"Node {cfg_nodes[i].id}:")
-                    print(
-                        visualize_frontier(
-                            cfg_nodes[i], frontiers[i], doms, cfg_nodes, False
-                        )
-                    )
+                for key_node, frontier in frontiers:
+                    print(f"Node {key_node.id}:")
+                    print(visualize_frontier(key_node, frontier, doms, cfg_nodes))
         # else:
         # visualize animation for dominance relation for all nodes in CFG
         # name = "perfect"
