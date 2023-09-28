@@ -124,6 +124,9 @@ def visualize(entry_node: Node, forward: bool = True):
 
     Paste output in https://edotor.net/ for a pretty diagram
     """
+    if len(entry_node.predecessors) != 0:
+        raise Exception("Entry node must have no predecessors")
+
     q = deque([entry_node])
     seen: Set[Node] = set()
 
