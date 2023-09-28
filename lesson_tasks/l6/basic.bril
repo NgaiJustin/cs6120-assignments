@@ -1,0 +1,17 @@
+@main {
+.entry:
+  cond: bool = const true;
+  br cond .a .b;
+
+.a:
+  x: int = const true;
+  jmp .exit;
+
+.b:
+  x: int = const false;
+  jmp .exit;
+
+.exit:
+  print x;
+  nop;
+}
