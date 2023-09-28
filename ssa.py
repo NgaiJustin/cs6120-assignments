@@ -34,9 +34,20 @@ def _collect_vars(entry_node: Node) -> Dict[str, Set[Node]]:
     return var_to_assignments
 
 
-def _rename_vars(entry_node: Node, dom_tree_dict: Dict[Node, Set[Node]]) -> None:
+def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None:
+    """
+    Rename variables in a CFG to be in SSA form.
+    - entry_node: the entry node of the CFG
+    - dom_tree_dict: a mapping of node_id to nodes that it immediately dominates
+    """
+    # key: old_var_name, value: deque of renamed var_names (var -> var_0, var_1, etc.)
     var_stack: Dict[str, deque] = defaultdict(deque)
+
+    # could use len(var_stack[var]) instead?
     var_counter: Dict[str, int] = defaultdict(int)
+
+    # tracks the current path the recursive _rename function has taken from the entry_node
+    node_ids_seen: Set[str] = set()
 
     def _get_new_name(var: str) -> str:
         new_name = f"{var}_{var_counter[var]}"
@@ -45,10 +56,18 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[Node, Set[Node]]) -> None
         return new_name
 
     def _rename(node: Node) -> None:
+        node_ids_seen_cache = node_ids_seen.copy()
+        node_ids_seen.add(node.id)
+        # print(f"visiting {node.id}")
+        # print(f"node_ids_seen: {sorted(node_ids_seen)}")
+
         # deep copy of var_stack
         var_stack_cache = {var_name: q.copy() for var_name, q in var_stack.items()}
 
-        # rename phi_node destination??
+        # rename dest for all phi_nodes in current node
+        if node.phi_nodes is not None:
+            for _, phi in node.phi_nodes.items():
+                phi.dest = _get_new_name(phi.dest)
 
         if "args" in node.instr:
             # replace args
@@ -57,22 +76,34 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[Node, Set[Node]]) -> None
 
         if "dest" in node.instr:
             # replace dest
-            old_dest = node.instr["dest"]
-            new_dest = _get_new_name(old_dest)
-            node.instr["dest"] = new_dest
+            pre_rename_dest = node.instr["dest"]
+            post_rename_dest = _get_new_name(pre_rename_dest)
+            node.instr["dest"] = post_rename_dest
 
-            # only update phi nodes if var has new assignment
-            for succ in node.successors:
-                if succ.phi_node is not None:
-                    succ.phi_node.update_var(new_dest, old_dest, node.id)
+        # update phi_nodes in successors
+        for succ in node.successors:
+            if succ.phi_nodes is not None:
+                for pre_rename_dest, phi in succ.phi_nodes.items():
+                    for phi_src_node_id in phi.args.keys():
+                        print(f"phi_src_node_id: {phi_src_node_id}")
+                        print(f"pre_rename_dest: {pre_rename_dest}")
+                        print(f"phi_src_node_id: {phi_src_node_id}")
+                        # if phi_src_node_id exists on the current path
+                        # (recursively traversed from the entry_node)
+                        if phi_src_node_id in node_ids_seen:
+                            phi.args[phi_src_node_id] = var_stack[pre_rename_dest][-1]
 
         # rename all immediately dominated nodes
-        for im_dom_node in dom_tree_dict[node]:  # TODO: FIX!)
+        for im_dom_node in sorted(dom_tree_dict[node.id]):
             _rename(im_dom_node)
 
         # restore var_stack
         var_stack.clear()
         var_stack.update(var_stack_cache)
+
+        # restore node_ids_seen
+        node_ids_seen.clear()
+        node_ids_seen.update(node_ids_seen_cache)
 
     _rename(entry_node)
 
@@ -89,9 +120,10 @@ def to_ssa(entry_node: Node) -> None:
             node = assignments_q.popleft()
             for df_node in dominance_frontier(node, entry_node):
                 # add phi node to df_node
-                if df_node.phi_node is None:
-                    df_node.phi_node = PhiNode()
-                df_node.phi_node.add_var(var, node.id, var)
+                if df_node.phi_nodes is None:
+                    df_node.phi_nodes = {var: PhiNode(dest=var, args={node.id: var})}
+
+                df_node.phi_nodes[var].args[node.id] = var
 
                 # update assignments to include the phi node use case
                 if df_node not in var_to_assignments[var]:
@@ -99,8 +131,12 @@ def to_ssa(entry_node: Node) -> None:
                     assignments_q.append(df_node)
 
     doms = _get_dominators(entry_node)
+    all_nodes = {node.id: node for node in doms.keys()}
+
     dom_tree = dominance_tree(doms)
-    dom_tree_dict = {node: node.successors for node in dom_tree}
+    dom_tree_dict = {
+        node.id: [all_nodes[succ.id] for succ in node.successors] for node in dom_tree
+    }
 
     _rename_vars(entry_node, dom_tree_dict)
 

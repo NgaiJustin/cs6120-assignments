@@ -7,32 +7,38 @@ import graphviz  # type: ignore
 from bril_type import *
 
 
+@dataclass
 class PhiNode:
-    # new_var_name -> {node.id -> old_var_name}
-    phi_dict: Dict[str, Dict[str, str]] = {}
+    dest: str
+    args: Dict[str, str]  # {node.id -> renamed_var_name}
+    # dest -> {node.id -> args}
+    # phi_dict: Dict[str, Dict[str, str]] = {}
 
-    def add_var(self, new_var_name: str, node_id: str, old_var_name: str):
-        """
-        Add a new variable to the phi node. If the variable already exists, do nothing.
-        """
-        if new_var_name not in self.phi_dict:
-            self.phi_dict[new_var_name] = {}
-        if node_id not in self.phi_dict[new_var_name]:
-            self.phi_dict[new_var_name][node_id] = old_var_name
+    # def add_var(self, dest: str, node_id: str, args: str):
+    #     """
+    #     Add a new variable to the phi node. If the variable already exists, do nothing.
+    #     """
+    #     if dest not in self.phi_dict:
+    #         self.phi_dict[dest] = {}
+    #     if node_id not in self.phi_dict[dest]:
+    #         self.phi_dict[dest][node_id] = args
 
-    def update_var(self, new_var_name: str, old_var_name: str, node_id: str):
-        """
-        TODO: May have to update key logic
-        """
-        if new_var_name not in self.phi_dict:
-            raise Exception(f"Variable {new_var_name} not in phi node")
-        if old_var_name not in self.phi_dict[new_var_name]:
-            raise Exception(f"Variable {old_var_name} not in phi node")
+    # def update_var(self, new_var_name: str, old_var_name: str, node_id: str):
+    #     """
+    #     TODO: May have to update key logic
+    #     """
+    #     if new_var_name not in self.phi_dict:
+    #         raise Exception(f"Variable {new_var_name} not in phi node")
+    #     if old_var_name not in self.phi_dict[new_var_name]:
+    #         raise Exception(f"Variable {old_var_name} not in phi node")
 
-        self.phi_dict[new_var_name][old_var_name] = node_id
+    #     self.phi_dict[new_var_name][old_var_name] = node_id
 
     def to_dict(self):
-        return self.phi_dict
+        return {
+            "dest": self.dest,
+            "args": self.args,
+        }
 
 
 @dataclass
@@ -42,7 +48,9 @@ class Node:
     successors: Set["Node"]
     instr: Instruction
     label: Optional[str]
-    phi_node: Optional[PhiNode] = None
+
+    # key: var_name_before_rename, value: PhiNode
+    phi_nodes: Optional[Dict[str, PhiNode]] = None
 
     def __str__(self):
         return f"{self.instr}"
@@ -72,9 +80,7 @@ class Node:
             "successors": [node.id for node in self.successors],
             "instr": self.instr,
             "label": self.label,
-            "phi_node": self.phi_node
-            if self.phi_node is None
-            else self.phi_node.to_dict(),
+            "phi_node": self.phi_nodes,
         }
 
 
@@ -151,12 +157,12 @@ def visualize_from_nodes(nodes: List[Node]):
     # Initialize nodes
     for node in sorted(nodes):
         node_desc = ""
-        if node.phi_node is not None:
+        if node.phi_nodes is not None:
             node_desc += "PHI:\\n"
-            for var, var_dict in node.phi_node.phi_dict.items():
-                node_desc += f"{var}: "
-                for node_id, old_var in var_dict.items():
-                    node_desc += f"{node_id} -> {old_var}, "
+            for _, phi in node.phi_nodes.items():
+                node_desc += f"{phi.dest}: "
+                for node_id, renamed_var in phi.args.items():
+                    node_desc += f"{node_id} -> {renamed_var}, "
                 node_desc += "\\n"
 
             node_desc += "\\n"
@@ -167,7 +173,7 @@ def visualize_from_nodes(nodes: List[Node]):
             else f"LABEL <{node.instr.get('label')}>"  # must be label
         )
 
-        g.node(node.id, node_desc, shape="rect" if node.phi_node else None)
+        g.node(node.id, node_desc, shape="rect" if node.phi_nodes else None)
 
     # key: node id
     # value: 0 = unvisited, -1 = visiting, 1 = visited
