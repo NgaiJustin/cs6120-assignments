@@ -20,7 +20,7 @@ def strictly_dominates(node_a: Node, node_b: Node, b_dominators: Set[Node]) -> b
 
     A strictly dominates B iff A dominates B and A ≠ B.
     """
-    return node_a in b_dominators and node_a != node_b
+    return node_a in b_dominators and node_a.id != node_b.id
 
 
 def _get_dominators(entry: Node) -> Dict[Node, Set[Node]]:
