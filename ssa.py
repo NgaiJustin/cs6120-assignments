@@ -58,8 +58,6 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None
     def _rename(node: Node) -> None:
         node_ids_seen_cache = node_ids_seen.copy()
         node_ids_seen.add(node.id)
-        # print(f"visiting {node.id}")
-        # print(f"node_ids_seen: {sorted(node_ids_seen)}")
 
         # deep copy of var_stack
         var_stack_cache = {var_name: q.copy() for var_name, q in var_stack.items()}
@@ -85,9 +83,6 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None
             if succ.phi_nodes is not None:
                 for pre_rename_dest, phi in succ.phi_nodes.items():
                     for phi_src_node_id in phi.args.keys():
-                        print(f"phi_src_node_id: {phi_src_node_id}")
-                        print(f"pre_rename_dest: {pre_rename_dest}")
-                        print(f"phi_src_node_id: {phi_src_node_id}")
                         # if phi_src_node_id exists on the current path
                         # (recursively traversed from the entry_node)
                         if phi_src_node_id in node_ids_seen:

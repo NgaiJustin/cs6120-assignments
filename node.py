@@ -11,28 +11,6 @@ from bril_type import *
 class PhiNode:
     dest: str
     args: Dict[str, str]  # {node.id -> renamed_var_name}
-    # dest -> {node.id -> args}
-    # phi_dict: Dict[str, Dict[str, str]] = {}
-
-    # def add_var(self, dest: str, node_id: str, args: str):
-    #     """
-    #     Add a new variable to the phi node. If the variable already exists, do nothing.
-    #     """
-    #     if dest not in self.phi_dict:
-    #         self.phi_dict[dest] = {}
-    #     if node_id not in self.phi_dict[dest]:
-    #         self.phi_dict[dest][node_id] = args
-
-    # def update_var(self, new_var_name: str, old_var_name: str, node_id: str):
-    #     """
-    #     TODO: May have to update key logic
-    #     """
-    #     if new_var_name not in self.phi_dict:
-    #         raise Exception(f"Variable {new_var_name} not in phi node")
-    #     if old_var_name not in self.phi_dict[new_var_name]:
-    #         raise Exception(f"Variable {old_var_name} not in phi node")
-
-    #     self.phi_dict[new_var_name][old_var_name] = node_id
 
     def to_dict(self):
         return {
