@@ -101,22 +101,22 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
     return dom_tree_nodes
 
 
-def dominance_frontier(a: Node) -> List[Node]:
+def dominance_frontier(a: Node, entry_node: Node | None = None) -> List[Node]:
     """
     Compute the dominance frontier for a given node.
 
     A dominance frontier is the set of nodes that are just “one edge away” from being dominated by a given node.
     """
-    # get entry node
-    entry_node = a
-    q = deque([entry_node])
-    while q:
-        temp_node = q.popleft()
-        if len(temp_node.predecessors) >= 1:
-            q.extend(temp_node.predecessors)
-        else:
-            entry_node = temp_node
-            break
+    if entry_node is None:
+        entry_node = a
+        q = deque([entry_node])
+        while q:
+            temp_node = q.popleft()
+            if len(temp_node.predecessors) >= 1:
+                q.extend(temp_node.predecessors)
+            else:
+                entry_node = temp_node
+                break
 
     doms = _get_dominators(entry_node)
     all_nodes = set(doms.keys())
