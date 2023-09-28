@@ -66,39 +66,34 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
     """
     Construct the dominance tree given a mapping of nodes to their dominators.
     """
-    dom_tree_nodes: List[Node] = []
+    dom_tree_nodes: Dict[str, Node] = {}
+
+    # initialize dom_tree_nodes
+    for node, _ in doms.items():
+        dom_tree_node = Node(
+            id=node.id,
+            predecessors=set(),
+            successors=set(),
+            instr=node.instr,
+            label=node.label,
+        )
+        dom_tree_nodes[node.id] = dom_tree_node
 
     for node_a, _ in doms.items():
         for node_b, b_dominators in doms.items():
-            if node_a == node_b:
-                if len(node_a.predecessors) == 0:
-                    # init entry node
-                    dom_tree_nodes.append(
-                        Node(
-                            id=node_a.id,
-                            predecessors=set(),
-                            successors=set(),
-                            instr=node_a.instr,
-                            label=node_a.label,
-                        )
-                    )
-            else:
+            if node_a != node_b:
                 # if A dominates B, and A does not strictly dominate any other node that strictly dominates B
                 if node_a in b_dominators and not any(
                     strictly_dominates(node_a, node_c, doms[node_c])
                     for node_c in b_dominators
                     if node_c != node_b
                 ):
-                    dom_tree_node = Node(
-                        id=node_b.id,
-                        predecessors=set([node_a]),  # all dominators except self
-                        successors=set(),
-                        instr=node_b.instr,
-                        label=node_b.label,
+                    dom_tree_nodes[node_a.id].successors.add(dom_tree_nodes[node_b.id])
+                    dom_tree_nodes[node_b.id].predecessors.add(
+                        dom_tree_nodes[node_a.id]
                     )
-                    dom_tree_nodes.append(dom_tree_node)
 
-    return dom_tree_nodes
+    return list(dom_tree_nodes.values())
 
 
 def dominance_frontier(a: Node, entry_node: Node | None = None) -> List[Node]:
@@ -225,7 +220,7 @@ if __name__ == "__main__":
             print(f"Function {cfg_root_nodes[i].func_name}:")
             doms = _get_dominators(cfg_root_nodes[i].entry_node)
             t = dominance_tree(doms)
-            print(visualize_from_nodes(t, forward=False))
+            print(visualize_from_nodes(t))
 
     elif cli_flags["f"]:
         print("Generating dominance frontier for all nodes in CFG...")
