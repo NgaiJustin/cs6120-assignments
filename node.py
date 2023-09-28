@@ -152,14 +152,22 @@ def visualize_from_nodes(nodes: List[Node], forward: bool = True):
     for node in sorted(nodes):
         node_desc = ""
         if node.phi_node is not None:
-            node_desc += f"PHI: {node.phi_node.to_dict()}\\n"
+            node_desc += "PHI:\\n"
+            for var, var_dict in node.phi_node.phi_dict.items():
+                node_desc += f"{var}: "
+                for node_id, old_var in var_dict.items():
+                    node_desc += f"{node_id} -> {old_var}, "
+                node_desc += "\\n"
+
+            node_desc += "\\n"
 
         node_desc += (
             briltxt.instr_to_string(node.instr)
             if "op" in node.instr
             else f"LABEL <{node.instr.get('label')}>"  # must be label
         )
-        g.node(node.id, node_desc)
+
+        g.node(node.id, node_desc, shape="rect" if node.phi_node else None)
 
     # key: node id
     # value: 0 = unvisited, -1 = visiting, 1 = visited
