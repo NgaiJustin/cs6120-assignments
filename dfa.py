@@ -1,10 +1,10 @@
 import sys
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import Callable, Dict, Iterable, List, Optional, Set
 
 from bril_type import *
-from cfg import to_cfg_fine_grain
+from cfg import to_cfg_fine_grain, get_entry_nodes
 from dfa_framework import DataFlowAnalysis
 from dot import DotFilmStrip
 from node import Node
@@ -218,22 +218,31 @@ def constant_propagation(
     return dfas
 
 
-def get_root_nodes(cfg_nodes: List[Node]) -> List[Node]:
-    return [node for node in cfg_nodes if len(node.predecessors) == 0]
-
-
 if __name__ == "__main__":
     program, _ = load()
 
     if program is None:
         sys.exit(1)
 
-    cfgs = to_cfg_fine_grain(program)
+    cfg_root_nodes = to_cfg_fine_grain(program)
+
+    # accumulate all nodes in the program
+    cfg_nodes = []
+    for root_node in cfg_root_nodes:
+        q = deque([root_node.entry_node])
+        seen: Set[Node] = set()
+
+        while q:
+            node = q.popleft()
+            seen.add(node)
+            q.extend([succ for succ in node.successors if succ not in seen])
+
+        cfg_nodes.extend(list(seen))
 
     ####################################################################################
     ## Run reaching definitions DFA on Catalan example and generate DFA animation
     # name = "catalan-reaching-definitons"
-    # rd_dfas = reaching_definition(get_root_nodes(cfgs), visualize_mode=True)
+    # rd_dfas = reaching_definition(get_entry_nodes(cfgs), visualize_mode=True)
 
     # rd_ex = rd_dfas[1]
     # dfs = DotFilmStrip(name)
@@ -244,7 +253,7 @@ if __name__ == "__main__":
     ####################################################################################
     ## Run constant prop DFA on Catalan example and generate DFA animation
     name = "catalan-constant-prop"
-    cp_dfas = constant_propagation(get_root_nodes(cfgs), visualize_mode=True)
+    cp_dfas = constant_propagation(get_entry_nodes(cfg_nodes), visualize_mode=True)
 
     cp_ex = cp_dfas[1]
     dfs = DotFilmStrip(name)

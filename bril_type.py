@@ -7,7 +7,7 @@ https://capra.cs.cornell.edu/bril/lang/syntax.html
 
 from typing import TypedDict, Union
 
-Type = Union[str, dict[str, "Type"]]
+Type = Union[None, str, dict[str, "Type"]]
 Literal = Union[bool, int]
 
 

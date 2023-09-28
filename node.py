@@ -7,7 +7,6 @@ import graphviz  # type: ignore
 from bril_type import *
 
 
-@dataclass(frozen=True)
 class PhiNode:
     # new_var_name -> {node.id -> old_var_name}
     phi_dict: Dict[str, Dict[str, str]] = {}
@@ -70,22 +69,85 @@ class Node:
         }
 
 
-def visualize(nodes: List[Node], forward: bool = True):
-    """Visualize a graph (CFG, Dominator Tree, etc.) using graphviz.
+@dataclass
+class RootNode:
+    func_name: str
+    func_args: list[Argument]
+    func_type: Type
+    entry_node: Node
 
-    Paste output in https://edotor.net/ for a pretty diagram"""
+    def __str__(self):
+        return f"{self.func_name}"
+
+    def __repr__(self):
+        return f"{self.func_name}"
+
+    def __hash__(self):
+        return hash(self.func_name)
+
+    def __eq__(self, other):
+        return isinstance(other, RootNode) and self.func_name == other.func_name
+
+    def to_dict(self):
+        return {
+            "func_name": self.func_name,
+            "func_args": self.func_args,
+            "func_type": self.func_type,
+            "entry_node": self.entry_node.to_dict(),
+        }
+
+
+def to_bril(root: RootNode) -> Function:
+    """
+    Convert a RootNode back to a Bril Function.
+    """
+    return {
+        "name": root.func_name,
+        "args": root.func_args,
+        "type": root.func_type,
+        "instrs": [],  # TODO: implement recovering of instructions
+    }
+
+
+def visualize(entry_node: Node, forward: bool = True):
+    """
+    Visualize a graph (CFG, Dominator Tree, etc.) using graphviz from an entry node.
+
+    Paste output in https://edotor.net/ for a pretty diagram
+    """
+    q = deque([entry_node])
+    seen: Set[Node] = set()
+
+    while q:
+        node = q.popleft()
+        seen.add(node)
+        q.extend([succ for succ in node.successors if succ not in seen])
+
+    return visualize_from_nodes(list(seen), forward)
+
+
+def visualize_from_nodes(nodes: List[Node], forward: bool = True):
+    """
+    Visualize a graph (CFG, Dominator Tree, etc.) using graphviz.
+
+    Paste output in https://edotor.net/ for a pretty diagram
+    """
     import briltxt  # type: ignore
 
     g = graphviz.Digraph()
 
     # Initialize nodes
     for node in nodes:
-        g.node(
-            node.id,
+        node_desc = ""
+        if node.phi_node is not None:
+            node_desc += f"PHI: {node.phi_node.to_dict()}\\n"
+
+        node_desc += (
             briltxt.instr_to_string(node.instr)
             if "op" in node.instr
-            else f"LABEL <{node.instr.get('label')}>",  # must be label
+            else f"LABEL <{node.instr.get('label')}>"  # must be label
         )
+        g.node(node.id, node_desc)
 
     # key: node id
     # value: 0 = unvisited, -1 = visiting, 1 = visited

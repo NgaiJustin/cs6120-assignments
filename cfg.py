@@ -1,17 +1,17 @@
 from typing import Dict, List
 
 from bril_type import *
-from node import Node, visualize
+from node import RootNode, Node, visualize
 from utils import load
 
 
-def to_cfg_fine_grain(bril: Program) -> List[Node]:
+def to_cfg_fine_grain(bril: Program) -> List[RootNode]:
     """
     Convert a Bril program to a list control flow graph (one graph for each function)
 
-    Returns all nodes in all CFGs
+    Returns a RootNode for each function in the program.
     """
-    cfg_nodes = []
+    cfg_root_nodes = []
     for fi, func in enumerate(bril["functions"]):
         nodes: List[Node] = []
         labels: Dict[str, Node] = {}
@@ -25,10 +25,21 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
                 instr=instr,
                 label=instr.get("label"),
             )
-            nodes.append(node)
-
             if node.label is not None:
                 labels[node.label] = node
+
+            nodes.append(node)
+
+            if ii == 0:
+                # First instruction in a function is the entry node
+                cfg_root_nodes.append(
+                    RootNode(
+                        func_name=func.get("name", f"f{fi}"),
+                        func_args=func.get("args", []),
+                        func_type=func.get("type", None),
+                        entry_node=node,
+                    )
+                )
 
         # Add edges between nodes
         for i in range(len(nodes) - 1):
@@ -58,9 +69,7 @@ def to_cfg_fine_grain(bril: Program) -> List[Node]:
                 node.successors.add(labels[dest_b])
                 labels[dest_b].predecessors.add(node)
 
-        cfg_nodes.extend(nodes)
-
-    return cfg_nodes
+    return cfg_root_nodes
 
 
 def get_entry_nodes(nodes: List[Node]) -> List[Node]:
@@ -71,4 +80,5 @@ def get_entry_nodes(nodes: List[Node]) -> List[Node]:
 if __name__ == "__main__":
     program, cli_flags = load()
 
-    print(visualize(to_cfg_fine_grain(program)))
+    for root_node in to_cfg_fine_grain(program):
+        print(visualize(root_node.entry_node))

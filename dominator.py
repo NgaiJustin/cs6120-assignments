@@ -9,7 +9,7 @@ from typing import Dict, List, Set
 
 from bril_type import *
 from cfg import get_entry_nodes, to_cfg_fine_grain
-from node import Node, visualize
+from node import Node, visualize_from_nodes
 from utils import load
 from dot import DotFilmStrip
 
@@ -201,38 +201,59 @@ if __name__ == "__main__":
         print("Please specify either -t or -f")
         sys.exit(1)
 
-    cfg_nodes = to_cfg_fine_grain(program)
-    entry_nodes = get_entry_nodes(cfg_nodes)
-    doms = _get_dominators(entry_nodes[0])  # TODO: pick the first function (for now)
+    cfg_root_nodes = to_cfg_fine_grain(program)
+
+    # accumulate all nodes in the program
+    cfg_nodes = []
+    for root_node in cfg_root_nodes:
+        q = deque([root_node.entry_node])
+        seen: Set[Node] = set()
+
+        while q:
+            node = q.popleft()
+            seen.add(node)
+            q.extend([succ for succ in node.successors if succ not in seen])
+
+        cfg_nodes.extend(list(seen))
+
+    # entry_nodes = get_entry_nodes(cfg_nodes)
 
     if cli_flags["t"]:
-        print("Generating dominance tree...")
-        t = dominance_tree(doms)
-        print(visualize(t, forward=False))
+        print("Generating dominance tree for each function...")
+
+        for i in range(len(cfg_root_nodes)):
+            print(f"Function {cfg_root_nodes[i].func_name}:")
+            doms = _get_dominators(cfg_root_nodes[i].entry_node)
+            t = dominance_tree(doms)
+            print(visualize_from_nodes(t, forward=False))
 
     elif cli_flags["f"]:
         print("Generating dominance frontier for all nodes in CFG...")
-        t = dominance_tree(doms)
-        frontiers = [dominance_frontier(node) for node in cfg_nodes]
+        for i in range(len(cfg_root_nodes)):
+            print(f"Function {cfg_root_nodes[i].func_name}:")
+            doms = _get_dominators(cfg_root_nodes[i].entry_node)
+            t = dominance_tree(doms)
 
-        if not cli_flags["v"]:
-            for i in range(len(cfg_nodes)):
-                print(f"Node {cfg_nodes[i].id}:")
-                print(
-                    visualize_frontier(
-                        cfg_nodes[i], frontiers[i], doms, cfg_nodes, False
+            frontiers = [dominance_frontier(node) for node in cfg_nodes]
+
+            if not cli_flags["v"]:
+                for i in range(len(cfg_nodes)):
+                    print(f"Node {cfg_nodes[i].id}:")
+                    print(
+                        visualize_frontier(
+                            cfg_nodes[i], frontiers[i], doms, cfg_nodes, False
+                        )
                     )
-                )
-        else:
-            # visualize animation for dominance relation for all nodes in CFG
-            name = "perfect"
-            dfs = DotFilmStrip(name)
-            dfs.extend_frames(
-                [
-                    visualize_frontier(
-                        cfg_nodes[i], frontiers[i], doms, cfg_nodes, False
-                    )
-                    for i in range(len(cfg_nodes))
-                ]
-            )
-            dfs.render(f"./lesson_tasks/l5/dom-animations/{name}")
+        # else:
+        # visualize animation for dominance relation for all nodes in CFG
+        # name = "perfect"
+        # dfs = DotFilmStrip(name)
+        # dfs.extend_frames(
+        #     [
+        #         visualize_frontier(
+        #             cfg_nodes[i], frontiers[i], doms, cfg_nodes, False
+        #         )
+        #         for i in range(len(cfg_nodes))
+        #     ]
+        # )
+        # dfs.render(f"./lesson_tasks/l5/dom-animations/{name}")
