@@ -18,15 +18,17 @@ def _collect_vars(entry_node: Node) -> Dict[str, Set[Node]]:
     """
     var_to_assignments: Dict[str, Set[Node]] = defaultdict(set)
     q = deque([entry_node])
+    seen: Set[str] = set()
     while q:
         node = q.popleft()
+        seen.add(node.id)
 
         # assignment statement
         if "dest" in node.instr:
             var_name = node.instr["dest"]
             var_to_assignments[var_name].add(node)
 
-        q.extend(node.successors)
+        q.extend([succ for succ in node.successors if succ.id not in seen])
 
     return var_to_assignments
 
