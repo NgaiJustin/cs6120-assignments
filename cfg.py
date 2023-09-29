@@ -49,8 +49,8 @@ def to_cfg(instrs: List[Instruction], f_id: int) -> List[Block]:
     # Add remaining labels
     for block in blocks:
         for instr in block.instrs:
-            if "labels" in instr:
-                label_str = instr["labels"][0]
+            if "label" in instr:
+                label_str = instr["label"]
                 if label_str not in label_to_block:
                     label_to_block[label_str] = block
 
