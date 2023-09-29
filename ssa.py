@@ -52,8 +52,8 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
     # could use len(var_stack[var]) instead?
     var_counter: Dict[str, int] = defaultdict(int)
 
-    # tracks the current path the recursive _rename function has taken from the entry_node
-    node_ids_seen: Set[str] = set()
+    # tracks the current path the recursive _rename function has taken from the entry_block
+    # node_ids_seen: Set[str] = set()
 
     def _get_new_name(var: str) -> str:
         new_name = f"{var}_{var_counter[var]}"
@@ -62,8 +62,8 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
         return new_name
 
     def _rename(block: Block) -> None:
-        node_ids_seen_cache = node_ids_seen.copy()
-        node_ids_seen.add(block.id)
+        # node_ids_seen_cache = node_ids_seen.copy()
+        # node_ids_seen.add(block.id)
 
         # deep copy of var_stack
         var_stack_cache = {var_name: q.copy() for var_name, q in var_stack.items()}
@@ -76,7 +76,9 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
         for instr in block.instrs:
             if "args" in instr:
                 # replace args
-                new_args = [var_stack[arg][-1] for arg in instr["args"]]
+                new_args = [
+                    var_stack[arg][-1] for arg in instr["args"] if arg in var_stack
+                ]
                 instr["args"] = new_args
 
             if "dest" in instr:
@@ -88,15 +90,15 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
         # update phi_nodes in successors
         for succ in block.successors:
             if succ.phi_nodes is not None:
-                for pre_rename_dest, phi in succ.phi_nodes.items():
-                    for phi_src_node_id in sorted(phi.args.keys()):
-                        # if phi_src_node_id exists on the current path
-                        # (recursively traversed from the entry_node)
-                        if (
-                            phi_src_node_id in node_ids_seen
-                            and phi_src_node_id != succ.id
-                        ):
-                            phi.args[phi_src_node_id] = var_stack[pre_rename_dest][-1]
+                for pre_rename_dest, phi in sorted(
+                    succ.phi_nodes.items(), key=lambda x: x[0]
+                ):
+                    # if phi_src_node_id exists on the current path
+                    # (recursively traversed from the entry_node)
+                    if len(var_stack[pre_rename_dest]) > 0:
+                        phi.args[block.id] = var_stack[pre_rename_dest][-1]
+                    else:
+                        phi.args[block.id] = "?"
 
         # rename all immediately dominated nodes
         for im_dom_node in sorted(dom_tree_dict[block.id]):
@@ -106,9 +108,9 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
         var_stack.clear()
         var_stack.update(var_stack_cache)
 
-        # restore node_ids_seen
-        node_ids_seen.clear()
-        node_ids_seen.update(node_ids_seen_cache)
+        # # restore node_ids_seen
+        # node_ids_seen.clear()
+        # node_ids_seen.update(node_ids_seen_cache)
 
     _rename(entry_node)
 
@@ -126,14 +128,14 @@ def to_ssa(entry_block: Block) -> None:
             for df_block in dominance_frontier_block(block, entry_block):
                 # no phi_nodes, create one for var
                 if df_block.phi_nodes is None:
-                    df_block.phi_nodes = {var: PhiNode(dest=var, args={block.id: var})}
+                    df_block.phi_nodes = {}
 
                 # no phi_node for var, create one
-                elif var not in df_block.phi_nodes:
-                    df_block.phi_nodes[var] = PhiNode(dest=var, args={block.id: var})
+                if var not in df_block.phi_nodes:
+                    df_block.phi_nodes[var] = PhiNode(dest=var, args={})
 
                 # different assignment to var, add to phi_node
-                elif (
+                if (
                     block.id not in df_block.phi_nodes[var].args
                     and df_block.id != block.id
                 ):
