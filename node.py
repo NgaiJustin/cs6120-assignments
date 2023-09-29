@@ -90,21 +90,9 @@ class RootNode:
         }
 
 
-def to_bril(root: RootNode) -> Function:
+def visualize(entry_node: Node):
     """
-    Convert a RootNode back to a Bril Function.
-    """
-    return {
-        "name": root.func_name,
-        "args": root.func_args,
-        "type": root.func_type,
-        "instrs": [],  # TODO: implement recovering of instructions
-    }
-
-
-def visualize(entry_node: Node, forward: bool = True):
-    """
-    Visualize a graph (CFG, Dominator Tree, etc.) using graphviz from an entry node.
+    Visualize a node based graph (CFG, Dominator Tree, etc.) using graphviz from an entry node.
 
     Paste output in https://edotor.net/ for a pretty diagram
     """
@@ -122,9 +110,9 @@ def visualize(entry_node: Node, forward: bool = True):
     return visualize_from_nodes(list(seen))
 
 
-def visualize_from_nodes(nodes: List[Node]):
+def visualize_from_nodes(nodes: List[Node]) -> str:
     """
-    Visualize a graph (CFG, Dominator Tree, etc.) using graphviz.
+    Visualize a node based graph (CFG, Dominator Tree, etc.) using graphviz.
 
     Paste output in https://edotor.net/ for a pretty diagram
     """
@@ -151,7 +139,7 @@ def visualize_from_nodes(nodes: List[Node]):
             else f"LABEL <{node.instr.get('label')}>"  # must be label
         )
 
-        g.node(node.id, node_desc, shape="rect" if node.phi_nodes else None)
+        g.node(node.id, node_desc, shape="Msquare" if node.phi_nodes else None)
 
     # key: node id
     # value: 0 = unvisited, -1 = visiting, 1 = visited
