@@ -128,7 +128,7 @@ def visualize_from_nodes(nodes: List[Node]) -> str:
             for _, phi in node.phi_nodes.items():
                 node_desc += f"{phi.dest}: "
                 for node_id, renamed_var in phi.args.items():
-                    node_desc += f"{node_id} -> {renamed_var}, "
+                    node_desc += f"({node_id} -> {renamed_var}), "
                 node_desc += "\\n"
 
             node_desc += "\\n"
@@ -139,7 +139,7 @@ def visualize_from_nodes(nodes: List[Node]) -> str:
             else f"LABEL <{node.instr.get('label')}>"  # must be label
         )
 
-        g.node(node.id, node_desc, shape="Msquare" if node.phi_nodes else None)
+        g.node(node.id, node_desc, shape="note" if node.phi_nodes else None)
 
     # key: node id
     # value: 0 = unvisited, -1 = visiting, 1 = visited
