@@ -7,34 +7,40 @@ from collections import defaultdict, deque
 from typing import Dict, List, Set
 
 from bril_type import *
-from cfg import get_entry_nodes, to_cfg_fine_grain
-from dominator import _get_dominators, dominance_frontier, dominance_tree
-from node import Node, PhiNode, visualize
+from cfg import to_cfg
+from dominator import (
+    _get_dominators_block,
+    dominance_frontier_block,
+    dominance_tree_block,
+)
+from node import Node, PhiNode
+from block import Block, visualize as visualize_block
 from utils import load
 
 
-def _collect_vars(entry_node: Node) -> Dict[str, Set[Node]]:
+def _collect_vars(entry_node: Block) -> Dict[str, Set[Block]]:
     """
     Return a mapping of variables to the nodes in which they are defined/assigned .
     """
-    var_to_assignments: Dict[str, Set[Node]] = defaultdict(set)
+    var_to_assignments: Dict[str, Set[Block]] = defaultdict(set)
     q = deque([entry_node])
     seen: Set[str] = set()
     while q:
-        node = q.popleft()
-        seen.add(node.id)
+        block = q.popleft()
+        seen.add(block.id)
 
-        # assignment statement
-        if "dest" in node.instr:
-            var_name = node.instr["dest"]
-            var_to_assignments[var_name].add(node)
+        for instr in block.instrs:
+            # assignment statement
+            if "dest" in instr:
+                var_name = instr["dest"]
+                var_to_assignments[var_name].add(block)
 
-        q.extend([succ for succ in node.successors if succ.id not in seen])
+        q.extend([succ for succ in block.successors if succ.id not in seen])
 
     return var_to_assignments
 
 
-def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None:
+def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> None:
     """
     Rename variables in a CFG to be in SSA form.
     - entry_node: the entry node of the CFG
@@ -55,41 +61,45 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None
         var_stack[var].append(new_name)
         return new_name
 
-    def _rename(node: Node) -> None:
+    def _rename(block: Block) -> None:
         node_ids_seen_cache = node_ids_seen.copy()
-        node_ids_seen.add(node.id)
+        node_ids_seen.add(block.id)
 
         # deep copy of var_stack
         var_stack_cache = {var_name: q.copy() for var_name, q in var_stack.items()}
 
         # rename dest for all phi_nodes in current node
-        if node.phi_nodes is not None:
-            for _, phi in node.phi_nodes.items():
+        if block.phi_nodes is not None:
+            for _, phi in block.phi_nodes.items():
                 phi.dest = _get_new_name(phi.dest)
 
-        if "args" in node.instr:
-            # replace args
-            new_args = [var_stack[arg][-1] for arg in node.instr["args"]]
-            node.instr["args"] = new_args
+        for instr in block.instrs:
+            if "args" in instr:
+                # replace args
+                new_args = [var_stack[arg][-1] for arg in instr["args"]]
+                instr["args"] = new_args
 
-        if "dest" in node.instr:
-            # replace dest
-            pre_rename_dest = node.instr["dest"]
-            post_rename_dest = _get_new_name(pre_rename_dest)
-            node.instr["dest"] = post_rename_dest
+            if "dest" in instr:
+                # replace dest
+                pre_rename_dest = instr["dest"]
+                post_rename_dest = _get_new_name(pre_rename_dest)
+                instr["dest"] = post_rename_dest
 
         # update phi_nodes in successors
-        for succ in node.successors:
+        for succ in block.successors:
             if succ.phi_nodes is not None:
                 for pre_rename_dest, phi in succ.phi_nodes.items():
-                    for phi_src_node_id in phi.args.keys():
+                    for phi_src_node_id in sorted(phi.args.keys()):
                         # if phi_src_node_id exists on the current path
                         # (recursively traversed from the entry_node)
-                        if phi_src_node_id in node_ids_seen:
+                        if (
+                            phi_src_node_id in node_ids_seen
+                            and phi_src_node_id != succ.id
+                        ):
                             phi.args[phi_src_node_id] = var_stack[pre_rename_dest][-1]
 
         # rename all immediately dominated nodes
-        for im_dom_node in sorted(dom_tree_dict[node.id]):
+        for im_dom_node in sorted(dom_tree_dict[block.id]):
             _rename(im_dom_node)
 
         # restore var_stack
@@ -103,42 +113,47 @@ def _rename_vars(entry_node: Node, dom_tree_dict: Dict[str, List[Node]]) -> None
     _rename(entry_node)
 
 
-def to_ssa(entry_node: Node) -> None:
+def to_ssa(entry_block: Block) -> None:
     """
     Convert a CFG into SSA form.
     """
-    var_to_assignments = _collect_vars(entry_node)
+    var_to_assignments = _collect_vars(entry_block)
 
     for var in var_to_assignments.keys():
         assignments_q = deque(var_to_assignments[var])
         while assignments_q:
-            node = assignments_q.popleft()
-            for df_node in dominance_frontier(node, entry_node):
+            block = assignments_q.popleft()
+            for df_block in dominance_frontier_block(block, entry_block):
                 # no phi_nodes, create one for var
-                if df_node.phi_nodes is None:
-                    df_node.phi_nodes = {var: PhiNode(dest=var, args={node.id: var})}
+                if df_block.phi_nodes is None:
+                    df_block.phi_nodes = {var: PhiNode(dest=var, args={block.id: var})}
 
                 # no phi_node for var, create one
-                elif var not in df_node.phi_nodes:
-                    df_node.phi_nodes[var] = PhiNode(dest=var, args={node.id: var})
+                elif var not in df_block.phi_nodes:
+                    df_block.phi_nodes[var] = PhiNode(dest=var, args={block.id: var})
 
-                else:
-                    df_node.phi_nodes[var].args[node.id] = var
+                # different assignment to var, add to phi_node
+                elif (
+                    block.id not in df_block.phi_nodes[var].args
+                    and df_block.id != block.id
+                ):
+                    df_block.phi_nodes[var].args[block.id] = var
 
                 # update assignments to include the phi node use case
-                if df_node not in var_to_assignments[var]:
-                    var_to_assignments[var].add(df_node)
-                    assignments_q.append(df_node)
+                if df_block not in var_to_assignments[var]:
+                    var_to_assignments[var].add(df_block)
+                    assignments_q.append(df_block)
 
-    doms = _get_dominators(entry_node)
-    all_nodes = {node.id: node for node in doms.keys()}
+    doms = _get_dominators_block(entry_block)
+    all_blocks = {block.id: block for block in doms.keys()}
 
-    dom_tree = dominance_tree(doms)
+    dom_tree = dominance_tree_block(doms)
     dom_tree_dict = {
-        node.id: [all_nodes[succ.id] for succ in node.successors] for node in dom_tree
+        block.id: [all_blocks[succ.id] for succ in block.successors]
+        for block in dom_tree
     }
 
-    _rename_vars(entry_node, dom_tree_dict)
+    _rename_vars(entry_block, dom_tree_dict)
 
 
 def from_ssa(cfg_nodes: List[Node]) -> List[Node]:
@@ -165,12 +180,12 @@ if __name__ == "__main__":
         print("Please specify either: \n  ... ssa.py -to \n  ... ssa.py -from")
         sys.exit(1)
 
-    cfg_root_nodes = to_cfg_fine_grain(program)
-
     if cli_flags["to"]:
-        for root_node in cfg_root_nodes:
-            to_ssa(root_node.entry_node)
-            print(visualize(root_node.entry_node))
+        for fi, func in enumerate(program["functions"]):
+            blocks = to_cfg(func.get("instrs", []), fi)
+            entry_block = [block for block in blocks if len(block.predecessors) == 0][0]
+            to_ssa(entry_block)
+            print(visualize_block(blocks))
 
     elif cli_flags["from"]:
         if cli_flags["-check"]:
