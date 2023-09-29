@@ -79,7 +79,7 @@ def visualize(blocks: List[Block]) -> str:
             for _, phi in block.phi_nodes.items():
                 block_desc += f"{phi.dest}: "
                 for block_id, renamed_var in phi.args.items():
-                    block_desc += f"{block_id} -> {renamed_var}, "
+                    block_desc += f"({block_id} -> {renamed_var}), "
                 block_desc += "\\n"
 
             block_desc += "\\n"
@@ -92,7 +92,7 @@ def visualize(blocks: List[Block]) -> str:
             )
             block_desc += "\\n"
 
-        g.node(block.id, block_desc, shape="Msquare" if block.phi_nodes else "rect")
+        g.node(block.id, block_desc, shape="note" if block.phi_nodes else "rect")
 
     # key: block id
     # value: 0 = unvisited, -1 = visiting, 1 = visited
