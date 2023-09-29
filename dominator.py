@@ -145,6 +145,38 @@ def dominance_tree(doms: Dict[Node, Set[Node]]) -> List[Node]:
     return list(dom_tree_nodes.values())
 
 
+def dominance_tree_block(doms: Dict[Block, Set[Block]]) -> List[Block]:
+    """
+    Construct the dominance tree given a mapping of nodes to their dominators.
+    """
+    dom_tree_blocks: Dict[str, Block] = {}
+
+    # initialize dom_tree_blocks
+    for block, _ in doms.items():
+        dom_tree_block = Block(
+            id=block.id,
+            predecessors=set(),
+            successors=set(),
+            instrs=block.instrs,
+            label=block.label,
+        )
+        dom_tree_blocks[block.id] = dom_tree_block
+
+    for a, _ in doms.items():
+        for b, b_dominators in doms.items():
+            if a != b:
+                # if A dominates B, and A does not strictly dominate any other node that strictly dominates B
+                if a in b_dominators and not any(
+                    strictly_dominates_block(a, c, doms[c])
+                    for c in b_dominators
+                    if c != b
+                ):
+                    dom_tree_blocks[a.id].successors.add(dom_tree_blocks[b.id])
+                    dom_tree_blocks[b.id].predecessors.add(dom_tree_blocks[a.id])
+
+    return list(dom_tree_blocks.values())
+
+
 def dominance_frontier(a: Node, entry_node: Node | None = None) -> List[Node]:
     """
     Compute the dominance frontier for a given node.
