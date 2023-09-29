@@ -10,6 +10,7 @@ from typing import Dict, List, Set
 from bril_type import *
 from cfg import get_entry_nodes, to_cfg_fine_grain
 from node import Node, visualize_from_nodes
+from block import Block, visualize as visualize_block
 from utils import load
 from dot import DotFilmStrip
 
@@ -21,6 +22,15 @@ def strictly_dominates(node_a: Node, node_b: Node, b_dominators: Set[Node]) -> b
     A strictly dominates B iff A dominates B and A ≠ B.
     """
     return node_a in b_dominators and node_a.id != node_b.id
+
+
+def strictly_dominates_block(a: Block, b: Block, b_dominators: Set[Block]) -> bool:
+    """
+    Return true if node_a strictly dominates node_b.
+
+    A strictly dominates B iff A dominates B and A ≠ B.
+    """
+    return a in b_dominators and a.id != b.id
 
 
 def _get_dominators(entry: Node) -> Dict[Node, Set[Node]]:
@@ -56,6 +66,45 @@ def _get_dominators(entry: Node) -> Dict[Node, Set[Node]]:
             dom[node].add(node)
 
             new_len = len(dom[node])
+
+            converged = (old_len == new_len) and converged
+
+    return dom
+
+
+def _get_dominators_block(entry: Block) -> Dict[Block, Set[Block]]:
+    """
+    Return the set of dominators for all nodes in a CFG.
+    """
+
+    # get all nodes reachable from the entry node
+    all_blocks: Set[Block] = set()
+    q = deque([entry])
+    while q:
+        block = q.popleft()
+        if block not in all_blocks:
+            all_blocks.add(block)
+            q.extend(block.successors)
+
+    # initialize as complete relation
+    dom = {block: all_blocks.copy() for block in all_blocks}
+    dom[entry] = {entry}
+
+    converged = False
+    while not converged:
+        converged = True
+
+        for block in dom.keys():
+            if block == entry:
+                continue
+
+            old_len = len(dom[block])
+
+            for p in block.predecessors:
+                dom[block] = dom[block].intersection(dom[p])
+            dom[block].add(block)
+
+            new_len = len(dom[block])
 
             converged = (old_len == new_len) and converged
 
@@ -121,6 +170,37 @@ def dominance_frontier(a: Node, entry_node: Node | None = None) -> List[Node]:
         b
         for b in all_nodes
         if not strictly_dominates(a, b, doms[b])
+        and any([a in doms[pre_node_b] for pre_node_b in b.predecessors])
+    ]
+
+    return frontier
+
+
+def dominance_frontier_block(a: Block, entry_block: Block | None = None) -> List[Block]:
+    """
+    Compute the dominance frontier for a given block.
+
+    A dominance frontier is the set of blocks that are just “one edge away” from being dominated by a given node.
+    """
+    if entry_block is None:
+        entry_block = a
+        q = deque([entry_block])
+        while q:
+            temp_node = q.popleft()
+            if len(temp_node.predecessors) >= 1:
+                q.extend(temp_node.predecessors)
+            else:
+                entry_block = temp_node
+                break
+
+    doms = _get_dominators_block(entry_block)
+    all_nodes = set(doms.keys())
+
+    # A’s dominance frontier contains B iff A does not strictly dominate B, but A does dominate some predecessor of B.
+    frontier = [
+        b
+        for b in all_nodes
+        if not strictly_dominates_block(a, b, doms[b])
         and any([a in doms[pre_node_b] for pre_node_b in b.predecessors])
     ]
 
