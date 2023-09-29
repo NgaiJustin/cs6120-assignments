@@ -51,13 +51,15 @@ class Block:
         }
 
 
-def to_bril(blocks: List[Block]) -> List[Instruction]:
+def blocks_to_instrs(blocks: List[Block]) -> List[Instruction]:
     """
     Convert a RootNode back to a Bril Function
     """
     instrs = []
     for block in blocks:
-        instrs.extend(block.instrs)
+        for instr in block.instrs:
+            instrs.append(instr)
+
     return instrs
 
 

@@ -6,6 +6,8 @@ import sys
 from collections import defaultdict, deque
 from typing import Dict, List, Set
 
+from block import Block, blocks_to_instrs
+from block import visualize as visualize_block
 from bril_type import *
 from cfg import to_cfg
 from dominator import (
@@ -14,7 +16,6 @@ from dominator import (
     dominance_tree_block,
 )
 from node import Node, PhiNode
-from block import Block, visualize as visualize_block
 from utils import load
 
 
@@ -96,9 +97,9 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
                     # if phi_src_node_id exists on the current path
                     # (recursively traversed from the entry_node)
                     if len(var_stack[pre_rename_dest]) > 0:
-                        phi.args[block.id] = var_stack[pre_rename_dest][-1]
+                        phi.args[block.label] = var_stack[pre_rename_dest][-1]
                     else:
-                        phi.args[block.id] = "?"
+                        phi.args[block.label] = "?"
 
         # rename all immediately dominated nodes
         for im_dom_node in sorted(dom_tree_dict[block.id]):
@@ -115,7 +116,7 @@ def _rename_vars(entry_node: Block, dom_tree_dict: Dict[str, List[Block]]) -> No
     _rename(entry_node)
 
 
-def to_ssa(entry_block: Block) -> None:
+def to_ssa(entry_block: Block, dest_to_types: Dict[str, Type]) -> List[Instruction]:
     """
     Convert a CFG into SSA form.
     """
@@ -136,10 +137,10 @@ def to_ssa(entry_block: Block) -> None:
 
                 # different assignment to var, add to phi_node
                 if (
-                    block.id not in df_block.phi_nodes[var].args
+                    block.label not in df_block.phi_nodes[var].args
                     and df_block.id != block.id
                 ):
-                    df_block.phi_nodes[var].args[block.id] = var
+                    df_block.phi_nodes[var].args[block.label] = var
 
                 # update assignments to include the phi node use case
                 if df_block not in var_to_assignments[var]:
@@ -157,6 +158,24 @@ def to_ssa(entry_block: Block) -> None:
 
     _rename_vars(entry_block, dom_tree_dict)
 
+    # add phi nodes to block.instrs
+    for block in blocks:
+        if block.phi_nodes is not None:
+            for pre_rename_var, phi in block.phi_nodes.items():
+                block.instrs.insert(
+                    1,  # after label
+                    {
+                        "op": "phi",
+                        "dest": phi.dest,
+                        "type": dest_to_types[pre_rename_var],  # TODO: fix later
+                        "labels": [label for label in phi.args.keys()],
+                        "args": [renamed_var for renamed_var in phi.args.values()],
+                    },
+                )
+            block.phi_nodes = None
+
+    return blocks_to_instrs(blocks)
+
 
 def from_ssa(cfg_nodes: List[Node]) -> List[Node]:
     """
@@ -173,7 +192,7 @@ def validate_ssa(cfg_nodes: List[Node]) -> bool:
 
 
 if __name__ == "__main__":
-    program, cli_flags = load(["-to", "-from", "-check"])
+    program, cli_flags = load(["-to", "-from", "-check", "-v"])
 
     if program is None:
         sys.exit(1)
@@ -185,9 +204,22 @@ if __name__ == "__main__":
     if cli_flags["to"]:
         for fi, func in enumerate(program["functions"]):
             blocks = to_cfg(func.get("instrs", []), fi)
-            entry_block = [block for block in blocks if len(block.predecessors) == 0][0]
-            to_ssa(entry_block)
-            print(visualize_block(blocks))
+            entry_block = blocks[0]
+            # get types of all variables in preparation for phi node construction
+            dest_to_types: Dict[str, Type] = {}
+            for block in blocks:
+                for instr in block.instrs:
+                    if "dest" in instr and "type" in instr:
+                        dest_to_types[instr["dest"]] = instr["type"]
+
+            # mutate func
+            func["instrs"] = to_ssa(entry_block, dest_to_types)
+
+            if cli_flags["v"]:
+                print(visualize_block(blocks))
+
+        if not cli_flags["v"]:
+            print(json.dumps(program, indent=2, sort_keys=True))
 
     elif cli_flags["from"]:
         if cli_flags["-check"]:
