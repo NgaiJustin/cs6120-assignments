@@ -114,11 +114,16 @@ def to_ssa(entry_node: Node) -> None:
         while assignments_q:
             node = assignments_q.popleft()
             for df_node in dominance_frontier(node, entry_node):
-                # add phi node to df_node
-                if df_node.phi_nodes is None or var not in df_node.phi_nodes:
+                # no phi_nodes, create one for var
+                if df_node.phi_nodes is None:
                     df_node.phi_nodes = {var: PhiNode(dest=var, args={node.id: var})}
 
-                df_node.phi_nodes[var].args[node.id] = var
+                # no phi_node for var, create one
+                elif var not in df_node.phi_nodes:
+                    df_node.phi_nodes[var] = PhiNode(dest=var, args={node.id: var})
+
+                else:
+                    df_node.phi_nodes[var].args[node.id] = var
 
                 # update assignments to include the phi node use case
                 if df_node not in var_to_assignments[var]:
