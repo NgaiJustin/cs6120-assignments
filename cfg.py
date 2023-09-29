@@ -14,7 +14,6 @@ def to_cfg(instrs: List[Instruction], f_id: int) -> List[Block]:
     for instr in instrs:
         block_instrs.append(instr)
         if instr.get("op") in {"jmp", "br", "ret"}:
-            block_instrs.append(instr)
             blocks.append(
                 Block(
                     id=f"f{f_id}-{len(blocks)}",
@@ -48,6 +47,8 @@ def to_cfg(instrs: List[Instruction], f_id: int) -> List[Block]:
 
     # Add edges
     for i in range(len(blocks) - 1):
+        if blocks[i].instrs[-1].get("op") in {"jmp", "br"}:
+            continue
         blocks[i].successors.add(blocks[i + 1])
         blocks[i + 1].predecessors.add(blocks[i])
 
