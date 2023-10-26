@@ -1,3 +1,4 @@
+import { PrivateIdentifierKind } from "https://esm.sh/typescript@5.0.4";
 import * as bril from "./bril-ts/bril.ts";
 import { readStdin, unreachable } from "./bril-ts/util.ts";
 
@@ -17,6 +18,14 @@ class BriliError extends Error {
  */
 function error(message: string): BriliError {
   return new BriliError(message);
+}
+
+/**
+ * Returns if a value is a pointer
+ */
+function isPointer(val: Value): boolean {
+  // console.log(val, `isPointer: ${typeof val === "object" && val.hasOwnProperty("loc")}`);
+  return typeof val === "object" && val.hasOwnProperty("loc");
 }
 
 /**
@@ -87,7 +96,7 @@ export class Heap<X> {
 
     if (data) {
       for (let i = 0; i < data.length; i++) {
-        if (typeof data[i] === "object" && data[i].hasOwnProperty("loc")) {
+        if (isPointer(data[i] as Value)) {
           this.decrementRefCount((data[i] as Pointer).loc);
         }
       }
@@ -107,6 +116,7 @@ export class Heap<X> {
   }
 
   free(key: Key) {
+    console.log(`freeing ${key.base}, ${key.offset}`);
     if (this.storage.has(key.base) && key.offset == 0) {
       this.freeKey(key);
       this.storage.delete(key.base);
@@ -143,27 +153,44 @@ export class Heap<X> {
 
   // Reference Counting Garbage Collection
   getRefCount(key: Key): number {
-    return this.storage.get(key.base)?.getCount() || 0;
+    if (this.storage.has(key.base)) {
+      return this.storage.get(key.base)!.getCount();
+    }
+    return 0;
   }
-  
+
   incrementRefCount(key: Key) {
+    // console.log(`incrementing ref count for ${key.base}`);
+    // console.log(`currently: ${this.getRefCount(key)}`);
     if (!this.storage.has(key.base)) {
       throw error(`Uninitialized heap location ${key.base}`);
     }
-    this.storage.get(key.base)?.increment();
+    this.storage.get(key.base)!.increment();
   }
 
   decrementRefCount(key: Key) {
+    // console.log(`decrementing ref count for ${key.base}`);
+    // console.log(`currently: ${this.getRefCount(key)}`);
     if (!this.storage.has(key.base)) {
       throw error(`Uninitialized heap location ${key.base}`);
     }
-    this.storage.get(key.base)?.decrement();
-
+    this.storage.get(key.base)!.decrement();
     if (this.getRefCount(key) == 0) {
       this.free(key);
     }
   }
 
+  size(): number {
+    return this.storage.size;
+  }
+
+  print() {
+    this.storage.forEach((val, key) => {
+      console.log(`key: ${key}`);
+      console.log(`val: ${val.val}`);
+      console.log(`count: ${val.getCount()}`);
+    });
+  }
 }
 
 const argCounts: { [key in bril.OpCode]: number | null } = {
@@ -440,6 +467,11 @@ function evalCall(instr: bril.Operation, state: State): Action {
 
     // Set the value of the arg in the new (function) environment.
     newEnv.set(params[i].name, value);
+
+    if (state.garbageCollect && isPointer(value)) {
+      // ptr passed as arg
+      state.heap.incrementRefCount((value as Pointer).loc);
+    }
   }
 
   // Invoke the interpreter on the function.
@@ -496,7 +528,30 @@ function evalCall(instr: bril.Operation, state: State): Action {
         `type of value returned by function does not match declaration`
       );
     }
+
+    // process gc if the call evaluates to a pointer or replaces a ptr
+    if (state.garbageCollect) {
+      // check if retVal is ptr, if so increment ref count
+      if (isPointer(retVal)) {
+        state.heap.incrementRefCount((retVal as Pointer).loc);
+      }
+      // check if instr.dest was previously a ptr, if so decrement ref count
+      const prevVal = state.env.get(instr.dest);
+      if (isPointer(prevVal!)) {
+        state.heap.decrementRefCount((prevVal as Pointer).loc);
+      }
+    }
+
     state.env.set(instr.dest, retVal);
+
+    // finish function call, decrement ref for everything in stack
+    if (state.garbageCollect) {
+      newEnv.forEach((val, _) => {
+        if (isPointer(val)) {
+          state.heap.decrementRefCount((val as Pointer).loc);
+        }
+      });
+    }
   }
   return NEXT;
 }
@@ -548,7 +603,22 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
     case "id": {
       const val = getArgument(instr, state.env, 0);
+
+      if (state.garbageCollect) {
+        // increment ref count, if storing copy of pointer
+        if (isPointer(val)) {
+          state.heap.incrementRefCount((val as Pointer).loc);
+        }
+
+        // if instr.dest was previously a ptr, decrement ref count
+        const prevVal = state.env.get(instr.dest);
+        if (isPointer(prevVal!)) {
+          state.heap.decrementRefCount((prevVal! as Pointer).loc);
+        }
+      }
+
       state.env.set(instr.dest, val);
+
       return NEXT;
     }
 
@@ -747,7 +817,20 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         throw error(`cannot allocate non-pointer type ${instr.type}`);
       }
       const ptr = alloc(typ, Number(amt), state.heap);
+
+      if (state.garbageCollect) {
+        // new pointer, increment ref count
+        state.heap.incrementRefCount(ptr.loc);
+
+        // if instr.dest was previously a ptr, decrement ref count
+        const prevVal = state.env.get(instr.dest);
+        if (isPointer(prevVal!)) {
+          state.heap.decrementRefCount((prevVal! as Pointer).loc);
+        }
+      }
+
       state.env.set(instr.dest, ptr);
+
       return NEXT;
     }
 
@@ -761,10 +844,25 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
     case "store": {
       const target = getPtr(instr, state.env, 0);
-      state.heap.write(
-        target.loc,
-        getArgument(instr, state.env, 1, target.type)
-      );
+      const val = getArgument(instr, state.env, 1, target.type);
+
+      if (state.garbageCollect) {
+        // TODO: Does the order matter here?
+
+        // if previously stored value was a ptr, decrement ref count
+        const prevVal = state.heap.read(target.loc);
+        if (isPointer(prevVal)) {
+          state.heap.decrementRefCount((prevVal as Pointer).loc);
+        }
+
+        // if val is a ptr (i.e. ptr to ptr), increment ref count
+        if (isPointer(val)) {
+          state.heap.incrementRefCount((val as Pointer).loc);
+        }
+      }
+
+      state.heap.write(target.loc, val);
+
       return NEXT;
     }
 
@@ -774,6 +872,19 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
       if (val === undefined || val === null) {
         throw error(`Pointer ${instr.args![0]} points to uninitialized data`);
       } else {
+        if (state.garbageCollect) {
+          // if val is a ptr, increment ref count
+          if (isPointer(val)) {
+            state.heap.incrementRefCount((val as Pointer).loc);
+          }
+
+          // if previously stored value was a ptr, decrement ref count
+          const prevVal = state.env.get(instr.dest);
+          if (isPointer(prevVal!)) {
+            state.heap.decrementRefCount((prevVal! as Pointer).loc);
+          }
+        }
+
         state.env.set(instr.dest, val);
       }
       return NEXT;
@@ -782,10 +893,22 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     case "ptradd": {
       const ptr = getPtr(instr, state.env, 0);
       const val = getInt(instr, state.env, 1);
+
+      if (state.garbageCollect) {
+        state.heap.incrementRefCount(ptr.loc);
+
+        // if previously stored value was a ptr, decrement ref count
+        const prevVal = state.env.get(instr.dest);
+        if (isPointer(prevVal!)) {
+          state.heap.decrementRefCount((prevVal! as Pointer).loc);
+        }
+      }
+
       state.env.set(instr.dest, {
         loc: ptr.loc.add(Number(val)),
         type: ptr.type,
       });
+
       return NEXT;
     }
 
@@ -812,6 +935,19 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
         if (val === undefined) {
           state.env.delete(instr.dest);
         } else {
+          if (state.garbageCollect) {
+            // if val is a ptr, increment ref count
+            if (isPointer(val)) {
+              state.heap.incrementRefCount((val as Pointer).loc);
+            }
+
+            // if previously stored value was a ptr, decrement ref count
+            const prevVal = state.env.get(instr.dest);
+            if (isPointer(prevVal!)) {
+              state.heap.decrementRefCount((prevVal! as Pointer).loc);
+            }
+          }
+
           state.env.set(instr.dest, val);
         }
       }
@@ -1047,10 +1183,10 @@ function evalProg(prog: bril.Program) {
     args.splice(pidx, 1);
   }
 
-  // Argument parsing to find the `--skipFree` and `--gc` flag.
+  // Argument parsing to find the `--sf` and `--gc` flag.
   let skipFree = false;
   let gc = false;
-  pidx = args.indexOf("--skipFree");
+  pidx = args.indexOf("--sf");
   if (pidx > -1) {
     skipFree = true;
     args.splice(pidx, 1);
@@ -1061,7 +1197,6 @@ function evalProg(prog: bril.Program) {
     gc = true;
     args.splice(pidx, 1);
   }
-
 
   // Remaining arguments are for the main function.k
   const expected = main.args || [];
@@ -1080,6 +1215,15 @@ function evalProg(prog: bril.Program) {
   };
   evalFunc(main, state);
 
+  // TODO: Free everything in newEnv.
+  if (state.garbageCollect) {
+    newEnv.forEach((val) => {
+      if (isPointer(val)) {
+        state.heap.decrementRefCount((val as Pointer).loc);
+      }
+    });
+  }
+
   if (!heap.isEmpty() && !skipFree) {
     throw error(
       `Some memory locations have not been freed by end of execution.`
@@ -1088,6 +1232,8 @@ function evalProg(prog: bril.Program) {
 
   if (profiling) {
     console.error(`total_dyn_inst: ${state.icount}`);
+    console.error(`remaining_heap_size: ${state.heap.size()}`);
+    state.heap.print();
   }
 }
 
