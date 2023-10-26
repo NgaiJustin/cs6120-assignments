@@ -1080,7 +1080,7 @@ function evalProg(prog: bril.Program) {
   };
   evalFunc(main, state);
 
-  if (!heap.isEmpty()) {
+  if (!heap.isEmpty() && !skipFree) {
     throw error(
       `Some memory locations have not been freed by end of execution.`
     );
