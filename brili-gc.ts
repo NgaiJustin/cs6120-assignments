@@ -753,7 +753,9 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
     case "free": {
       const val = getPtr(instr, state.env, 0);
-      state.heap.free(val.loc);
+      if (!state.skipFree) {
+        state.heap.free(val.loc);
+      }
       return NEXT;
     }
 
