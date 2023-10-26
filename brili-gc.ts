@@ -38,11 +38,33 @@ export class Key {
   }
 }
 
+export class CountedX<X> {
+  readonly val: X;
+  private count: number;
+
+  constructor(v: X) {
+    this.val = v;
+    this.count = 1;
+  }
+
+  increment() {
+    this.count++;
+  }
+
+  decrement() {
+    this.count--;
+  }
+
+  getCount(): number {
+    return this.count;
+  }
+}
+
 /**
  * A Heap maps Keys to arrays of a given type.
  */
 export class Heap<X> {
-  private readonly storage: Map<number, X[]>;
+  private readonly storage: Map<number, CountedX<X[]>>;
   constructor() {
     this.storage = new Map();
   }
@@ -58,7 +80,19 @@ export class Heap<X> {
     return val;
   }
 
-  private freeKey(_key: Key) {
+  private freeKey(key: Key) {
+    // If the key stores a pointer, decrement the reference count and
+    // recursively free if necessary.
+    const data = this.storage.get(key.base)?.val;
+
+    if (data) {
+      for (let i = 0; i < data.length; i++) {
+        if (typeof data[i] === "object" && data[i].hasOwnProperty("loc")) {
+          this.decrementRefCount((data[i] as Pointer).loc);
+        }
+      }
+    }
+
     return;
   }
 
@@ -67,7 +101,8 @@ export class Heap<X> {
       throw error(`cannot allocate ${amt} entries`);
     }
     const base = this.getNewBase();
-    this.storage.set(base, new Array(amt));
+    const countedData: CountedX<X[]> = new CountedX(new Array(amt));
+    this.storage.set(base, countedData);
     return new Key(base, 0);
   }
 
@@ -83,7 +118,8 @@ export class Heap<X> {
   }
 
   write(key: Key, val: X) {
-    const data = this.storage.get(key.base);
+    const data = this.storage.get(key.base)?.val;
+
     if (data && data.length > key.offset && key.offset >= 0) {
       data[key.offset] = val;
     } else {
@@ -94,7 +130,8 @@ export class Heap<X> {
   }
 
   read(key: Key): X {
-    const data = this.storage.get(key.base);
+    const data = this.storage.get(key.base)?.val;
+
     if (data && data.length > key.offset && key.offset >= 0) {
       return data[key.offset];
     } else {
@@ -103,6 +140,30 @@ export class Heap<X> {
       );
     }
   }
+
+  // Reference Counting Garbage Collection
+  getRefCount(key: Key): number {
+    return this.storage.get(key.base)?.getCount() || 0;
+  }
+  
+  incrementRefCount(key: Key) {
+    if (!this.storage.has(key.base)) {
+      throw error(`Uninitialized heap location ${key.base}`);
+    }
+    this.storage.get(key.base)?.increment();
+  }
+
+  decrementRefCount(key: Key) {
+    if (!this.storage.has(key.base)) {
+      throw error(`Uninitialized heap location ${key.base}`);
+    }
+    this.storage.get(key.base)?.decrement();
+
+    if (this.getRefCount(key) == 0) {
+      this.free(key);
+    }
+  }
+
 }
 
 const argCounts: { [key in bril.OpCode]: number | null } = {
@@ -340,6 +401,10 @@ type State = {
 
   // For speculation: the state at the point where speculation began.
   specparent: State | null;
+
+  // Additional Flags for L11 GC Task
+  skipFree: boolean;
+  garbageCollect: boolean;
 };
 
 /**
@@ -386,6 +451,8 @@ function evalCall(instr: bril.Operation, state: State): Action {
     lastlabel: null,
     curlabel: null,
     specparent: null, // Speculation not allowed.
+    skipFree: state.skipFree,
+    garbageCollect: state.garbageCollect,
   };
   const retVal = evalFunc(func, newState);
   state.icount = newState.icount;
@@ -972,11 +1039,27 @@ function evalProg(prog: bril.Program) {
   // Silly argument parsing to find the `-p` flag.
   const args: string[] = Array.from(Deno.args);
   let profiling = false;
-  const pidx = args.indexOf("-p");
+  let pidx = args.indexOf("-p");
   if (pidx > -1) {
     profiling = true;
     args.splice(pidx, 1);
   }
+
+  // Argument parsing to find the `--skipFree` and `--gc` flag.
+  let skipFree = false;
+  let gc = false;
+  pidx = args.indexOf("--skipFree");
+  if (pidx > -1) {
+    skipFree = true;
+    args.splice(pidx, 1);
+  }
+
+  pidx = args.indexOf("--gc");
+  if (pidx > -1) {
+    gc = true;
+    args.splice(pidx, 1);
+  }
+
 
   // Remaining arguments are for the main function.k
   const expected = main.args || [];
@@ -990,6 +1073,8 @@ function evalProg(prog: bril.Program) {
     lastlabel: null,
     curlabel: null,
     specparent: null,
+    skipFree: skipFree,
+    garbageCollect: gc,
   };
   evalFunc(main, state);
 
@@ -1007,7 +1092,6 @@ function evalProg(prog: bril.Program) {
 async function main() {
   try {
     const prog = JSON.parse(await readStdin()) as bril.Program;
-    console.log("I'm the GC interpreter!");
     evalProg(prog);
   } catch (e) {
     if (e instanceof BriliError) {
