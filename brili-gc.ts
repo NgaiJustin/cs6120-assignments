@@ -544,16 +544,16 @@ function evalCall(instr: bril.Operation, state: State): Action {
     }
 
     state.env.set(instr.dest, retVal);
-
-    // finish function call, decrement ref for everything in stack
-    if (state.garbageCollect) {
-      newEnv.forEach((val, _) => {
-        if (isPointer(val)) {
-          state.heap.decrementRefCount((val as Pointer).loc);
-        }
-      });
-    }
   }
+  // finish function call, decrement ref for everything in stack
+  if (state.garbageCollect) {
+    newEnv.forEach((val, _) => {
+      if (isPointer(val)) {
+        state.heap.decrementRefCount((val as Pointer).loc);
+      }
+    });
+  }
+  
   return NEXT;
 }
 
