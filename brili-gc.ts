@@ -186,9 +186,9 @@ export class Heap<X> {
 
   print() {
     this.storage.forEach((val, key) => {
-      console.log(`key: ${key}`);
-      console.log(`val: ${val.val}`);
-      console.log(`count: ${val.getCount()}`);
+      console.error(`key: ${key}`);
+      console.error(`val: ${val.val}`);
+      console.error(`count: ${val.getCount()}`);
     });
   }
 }
