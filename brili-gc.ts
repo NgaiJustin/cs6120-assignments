@@ -116,8 +116,8 @@ export class Heap<X> {
   }
 
   free(key: Key) {
-    console.log(`freeing ${key.base}, ${key.offset}`);
-    if (this.storage.has(key.base) && key.offset == 0) {
+    // console.log(`freeing ${key.base}, ${key.offset}`);
+    if (this.storage.has(key.base)) {
       this.freeKey(key);
       this.storage.delete(key.base);
     } else {
@@ -176,6 +176,7 @@ export class Heap<X> {
     }
     this.storage.get(key.base)!.decrement();
     if (this.getRefCount(key) == 0) {
+      // console.log(`freeing ${key.base}`);
       this.free(key);
     }
   }
@@ -820,7 +821,8 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 
       if (state.garbageCollect) {
         // new pointer, increment ref count
-        state.heap.incrementRefCount(ptr.loc);
+        // no need to increment because already done in alloc
+        // state.heap.incrementRefCount(ptr.loc);   
 
         // if instr.dest was previously a ptr, decrement ref count
         const prevVal = state.env.get(instr.dest);
@@ -876,6 +878,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
           // if val is a ptr, increment ref count
           if (isPointer(val)) {
             state.heap.incrementRefCount((val as Pointer).loc);
+            // console.log("DEBUG: ", state.heap.getRefCount((val as Pointer).loc));
           }
 
           // if previously stored value was a ptr, decrement ref count
