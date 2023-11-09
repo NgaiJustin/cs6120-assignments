@@ -1,0 +1,6 @@
+{"dest":"cond","op":"const","type":"bool","value":true}
+{"args":["cond"],"labels":["a","b"],"op":"br"}
+{"dest":"x","op":"const","type":"int","value":true}
+{"labels":["exit"],"op":"jmp"}
+{"args":["x"],"op":"print"}
+{"op":"nop"}
