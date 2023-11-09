@@ -340,6 +340,9 @@ type State = {
 
   // For speculation: the state at the point where speculation began.
   specparent: State | null;
+
+  // L12 Dynamic Compiler
+  trace: Array<object>;
 };
 
 /**
@@ -386,6 +389,9 @@ function evalCall(instr: bril.Operation, state: State): Action {
     lastlabel: null,
     curlabel: null,
     specparent: null, // Speculation not allowed.
+    
+    // L12 Dynamic Compiler
+    trace: [],
   };
   const retVal = evalFunc(func, newState);
   state.icount = newState.icount;
@@ -441,6 +447,8 @@ function evalCall(instr: bril.Operation, state: State): Action {
  * instruction or "end" to terminate the function.
  */
 function evalInstr(instr: bril.Instruction, state: State): Action {
+  console.log(JSON.stringify(instr));
+  
   state.icount += BigInt(1);
 
   // Check that we have the right number of arguments.
@@ -636,7 +644,7 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
           return val.toString();
         }
       });
-      console.log(...values);
+      // console.log(...values); 
       return NEXT;
     }
 
