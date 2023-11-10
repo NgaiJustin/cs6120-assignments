@@ -342,7 +342,8 @@ type State = {
   specparent: State | null;
 
   // L12 Dynamic Compiler
-  trace: Array<object>;
+  isTracing: boolean;
+  trace: Array<Array<object>>;
 };
 
 /**
@@ -389,12 +390,12 @@ function evalCall(instr: bril.Operation, state: State): Action {
     lastlabel: null,
     curlabel: null,
     specparent: null, // Speculation not allowed.
-    
+
     // L12 Dynamic Compiler
-    trace: [],
+    isTracing: state.isTracing,
+    trace: state.trace,
   };
   const retVal = evalFunc(func, newState);
-  state.icount = newState.icount;
 
   // Dynamically check the function's return value and type.
   if (!("dest" in instr)) {
@@ -447,8 +448,7 @@ function evalCall(instr: bril.Operation, state: State): Action {
  * instruction or "end" to terminate the function.
  */
 function evalInstr(instr: bril.Instruction, state: State): Action {
-  console.log(JSON.stringify(instr));
-  
+  state.trace[state.trace.length - 1].push(instr);
   state.icount += BigInt(1);
 
   // Check that we have the right number of arguments.
@@ -632,6 +632,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "print": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const args = instr.args || [];
       const values = args.map(function (i) {
         const val = get(state.env, i);
@@ -644,16 +649,35 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
           return val.toString();
         }
       });
-      // console.log(...values); 
+      // console.log(...values);
       return NEXT;
     }
 
     case "jmp": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
       return { action: "jump", label: getLabel(instr, 0) };
     }
 
     case "br": {
       const cond = getBool(instr, state.env, 0);
+      const guard_cond = {
+        dest: "condition",
+        op: cond ? "id" : "not",
+        type: "bool",
+        args: [instr.args![0]],
+      };
+      const guard = {
+        op: "guard",
+        args: ["condition"],
+        labels: ["failed"],
+      };
+      
+      state.trace[state.trace.length - 1].push(guard_cond);
+      state.trace[state.trace.length - 1].push(guard);
+
       if (cond) {
         return { action: "jump", label: getLabel(instr, 0) };
       } else {
@@ -678,10 +702,19 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "call": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
       return evalCall(instr, state);
     }
 
     case "alloc": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const amt = getInt(instr, state.env, 0);
       const typ = instr.type;
       if (!(typeof typ === "object" && typ.hasOwnProperty("ptr"))) {
@@ -693,12 +726,22 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "free": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const val = getPtr(instr, state.env, 0);
       state.heap.free(val.loc);
       return NEXT;
     }
 
     case "store": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const target = getPtr(instr, state.env, 0);
       state.heap.write(
         target.loc,
@@ -708,6 +751,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "load": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const ptr = getPtr(instr, state.env, 0);
       const val = state.heap.read(ptr.loc);
       if (val === undefined || val === null) {
@@ -719,6 +767,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "ptradd": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const ptr = getPtr(instr, state.env, 0);
       const val = getInt(instr, state.env, 1);
       state.env.set(instr.dest, {
@@ -729,6 +782,11 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
     }
 
     case "phi": {
+      if (state.isTracing) {
+        state.trace[state.trace.length - 1].pop();
+        state.isTracing = false;
+      }
+
       const labels = instr.labels || [];
       const args = instr.args || [];
       if (labels.length != args.length) {
@@ -828,6 +886,12 @@ function evalInstr(instr: bril.Instruction, state: State): Action {
 }
 
 function evalFunc(func: bril.Function, state: State): Value | null {
+
+  // Initialize trace 
+  if (state.isTracing) {
+    state.trace.push([]);
+  }
+
   for (let i = 0; i < func.instrs.length; ++i) {
     const line = func.instrs[i];
     if ("op" in line) {
@@ -998,9 +1062,15 @@ function evalProg(prog: bril.Program) {
     lastlabel: null,
     curlabel: null,
     specparent: null,
+
+    // L12 Dynamic Compiler
+    isTracing: true,
+    trace: [],
   };
   evalFunc(main, state);
 
+  console.log(JSON.stringify(state.trace, null, 2));
+  
   if (!heap.isEmpty()) {
     throw error(
       `Some memory locations have not been freed by end of execution.`

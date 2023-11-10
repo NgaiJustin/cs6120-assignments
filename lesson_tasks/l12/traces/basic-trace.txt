@@ -1,6 +1,52 @@
-{"dest":"cond","op":"const","type":"bool","value":true}
-{"args":["cond"],"labels":["a","b"],"op":"br"}
-{"dest":"x","op":"const","type":"int","value":true}
-{"labels":["exit"],"op":"jmp"}
-{"args":["x"],"op":"print"}
-{"op":"nop"}
+[
+  [
+    {
+      "dest": "cond",
+      "op": "const",
+      "type": "bool",
+      "value": true
+    },
+    {
+      "args": [
+        "cond"
+      ],
+      "labels": [
+        "a",
+        "b"
+      ],
+      "op": "br"
+    },
+    {
+      "dest": "condition",
+      "op": "id",
+      "type": "bool",
+      "args": [
+        "cond"
+      ]
+    },
+    {
+      "op": "guard",
+      "args": [
+        "condition"
+      ],
+      "labels": [
+        "failed"
+      ]
+    },
+    {
+      "dest": "x",
+      "op": "const",
+      "type": "int",
+      "value": true
+    },
+    {
+      "args": [
+        "x"
+      ],
+      "op": "print"
+    },
+    {
+      "op": "nop"
+    }
+  ]
+]
