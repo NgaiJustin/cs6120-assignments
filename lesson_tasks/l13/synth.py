@@ -18,6 +18,14 @@ GRAMMAR = """
   | term "/"  item      -> div
   | term ">>" item      -> shr
   | term "<<" item      -> shl
+  | term "%"  item      -> mod
+  | term "==" item      -> eq
+  | term "!=" item      -> ne
+  | term "<"  item      -> lt
+  | term "<=" item      -> le
+  | term ">"  item      -> gt
+  | term ">=" item      -> ge
+
 
 ?item: NUMBER           -> num
   | "-" item            -> neg
@@ -39,7 +47,21 @@ def interp(tree, lookup):
     """
 
     op = tree.data
-    if op in ("add", "sub", "mul", "div", "shl", "shr"):  # Binary operators.
+    if op in (
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "shl",
+        "shr",
+        "mod",
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge",
+    ):  # Binary operators.
         lhs = interp(tree.children[0], lookup)
         rhs = interp(tree.children[1], lookup)
         if op == "add":
@@ -54,6 +76,21 @@ def interp(tree, lookup):
             return lhs << rhs
         elif op == "shr":
             return lhs >> rhs
+        elif op == "mod":
+            return lhs % rhs
+        elif op == "eq":
+            return lhs == rhs
+        elif op == "ne":
+            return lhs != rhs
+        elif op == "lt":
+            return lhs < rhs
+        elif op == "le":
+            return lhs <= rhs
+        elif op == "gt":
+            return lhs > rhs
+        elif op == "ge":
+            return lhs >= rhs
+
     elif op == "neg":  # Negation.
         sub = interp(tree.children[0], lookup)
         return -sub
@@ -87,7 +124,21 @@ def pretty(tree, subst={}, paren=False):
             return s
 
     op = tree.data
-    if op in ("add", "sub", "mul", "div", "shl", "shr"):
+    if op in (
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "shl",
+        "shr",
+        "mod",
+        "eq",
+        "ne",
+        "lt",
+        "le",
+        "gt",
+        "ge",
+    ):
         lhs = pretty(tree.children[0], subst, True)
         rhs = pretty(tree.children[1], subst, True)
         c = {
@@ -97,6 +148,13 @@ def pretty(tree, subst={}, paren=False):
             "div": "/",
             "shl": "<<",
             "shr": ">>",
+            "mod": "%",
+            "eq": "==",
+            "ne": "!=",
+            "lt": "<",
+            "le": "<=",
+            "gt": ">",
+            "ge": ">=",
         }[op]
         return par("{} {} {}".format(lhs, c, rhs))
     elif op == "neg":
@@ -151,6 +209,7 @@ def solve(phi):
 
     s = z3.Solver()
     s.add(phi)
+    print(s)
     s.check()
     return s.model()
 
